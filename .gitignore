@@ -1,0 +1,7 @@
+build/
+node_modules/
+
+glsl/index.js
+
+# for now
+package-lock.json

@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "brfs": "^2.0.1",
+    "browserify": "^16.2.3",
+    "mustache": "^3.0.1"
+  },
+  "devDependencies": {
+    "watchify": "^3.11.0"
+  },
+  "scripts": {
+    "build": "./build.sh && npm run browserify",
+    "browserify": "browserify -t brfs apps/app.js -o build/bundle.js",
+    "watch": "watchify -t brfs apps/app.js -o build/bundle.js"
+  }
+}

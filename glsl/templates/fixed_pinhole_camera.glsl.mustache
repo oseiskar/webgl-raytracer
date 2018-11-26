@@ -1,0 +1,19 @@
+#ifndef PINHOLE_CAMERA_INCLUDED
+#define PINHOLE_CAMERA_INCLUDED
+
+void get_pinhole_camera(out vec3 cam_pos, out vec3 cam_x, out vec3 cam_y, out vec3 cam_z, out float fov_angle) {
+  // define camera
+  fov_angle = {{fovAngleRad}};
+  const float cam_theta = {{thetaRad}};
+  const float cam_phi = {{phiRad}};
+  const float cam_dist = {{distance}};
+  vec3 camera_target = vec3({{targetList}});
+
+  cam_z = vec3(cos(cam_theta), sin(cam_theta), 0.0);
+  cam_x = vec3(cam_z.y, -cam_z.x, 0.0);
+  cam_z = cos(cam_phi)*cam_z + vec3(0,0,-sin(cam_phi));
+  cam_y = cross(cam_x, cam_z);
+  cam_pos = -cam_z * cam_dist + camera_target;
+}
+
+#endif

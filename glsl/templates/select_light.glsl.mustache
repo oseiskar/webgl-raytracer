@@ -1,0 +1,33 @@
+#include "rand"
+#ifndef DISABLE_LIGHT_SAMPLING
+
+{{#uniqueSamplers}}
+{{{.}}}
+{{/uniqueSamplers}}
+
+// for bidirectional tracing
+int select_light(out vec3 light_point, out vec3 light_normal, out float sample_prob_density_per_area, inout rand_state rng) {
+      // This should work assuming the different lights have similar intensity
+      const float totalArea = 0.0
+      {{#lights}}
+        + {{getAreaName}}({{parameterList}})
+      {{/lights}}
+      ;
+      if (totalArea <= 0.0) return 0;
+      sample_prob_density_per_area = 1.0 / totalArea;
+
+      float choice = rand_next_uniform(rng) * totalArea;
+      float area;
+
+      {{#lights}}
+      area = {{getAreaName}}({{parameterList}});
+      if (choice < area) {
+        {{samplerName}}(rng, light_point, light_normal {{parameterListLeadingComma}});
+        light_point += vec3({{posList}});
+        return {{id}};
+      }
+      choice -= area;
+      {{/lights}}
+      return 0;
+}
+#endif

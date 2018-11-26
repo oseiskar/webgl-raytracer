@@ -1,0 +1,21 @@
+bool get_emission(int which_obj, out vec3 emission) {
+  {{#materialEmissions}}
+  {{^first}}else {{/first}}if (which_obj >= {{minObjectId}} && which_obj <= {{maxObjectId}}) {
+    emission = {{value}};
+    return true;
+  }
+  {{/materialEmissions}}
+  emission = vec3(0.0, 0.0, 0.0);
+  return false;
+}
+
+{{#genericProperties}}
+{{type}} get_{{name}}(int which_obj) {
+  {{#materials}}
+  {{^first}}else {{/first}}if (which_obj >= {{minObjectId}} && which_obj <= {{maxObjectId}}) {
+    return {{value}};
+  }
+  {{/materials}}
+  return {{default}};
+}
+{{/genericProperties}}

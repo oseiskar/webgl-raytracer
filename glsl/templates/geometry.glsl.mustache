@@ -1,0 +1,26 @@
+#include "util/math.glsl"
+
+{{#tracers}}
+{{{code}}}
+{{/tracers}}
+
+int find_intersection(vec3 ray_pos, vec3 ray, int prev_object, int inside_object, out vec4 intersection) {
+    int which_object = 0, cur_id;
+    vec4 cur_isec;
+    vec3 rel_pos;
+    bool inside;
+
+    {{#objects}}
+    cur_id = {{id}};
+    inside = inside_object == cur_id;
+    if (inside || prev_object != cur_id) {
+      rel_pos = ray_pos - vec3({{posList}});
+      cur_isec = {{tracerName}}(rel_pos, ray, inside {{parameterListLeadingComma}});
+      if (cur_isec.w > 0.0 && (cur_isec.w < intersection.w || which_object == 0)) {
+          intersection = cur_isec;
+          which_object = cur_id;
+      }
+    }
+    {{/objects}}
+    return which_object;
+}
