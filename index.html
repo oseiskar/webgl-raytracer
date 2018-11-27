@@ -5,20 +5,32 @@
         <meta charset="utf-8">
         <style>
 
+          body {
+            margin: 0;
+            background: gray;
+          }
+
+          canvas {
+            border: 4px solid black;
+          }
+
           .fullscreen canvas {
             width: 100%;
             height: 100%;
             display: block;
-          }
-
-          body {
-            margin: 0;
-            overflow: hidden !important;
+            border: 0 !important;
           }
 
           #shader-container {
-             width: 100vw;
-             height: 100vh;
+            padding-top: 5%;
+            display: flex;
+            justify-content: center;
+          }
+
+          #shader-container.fullscreen {
+            padding: 0 !important;
+            width: 100vw;
+            height: 100vh;
           }
         </style>
     </head>
