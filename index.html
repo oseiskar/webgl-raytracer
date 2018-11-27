@@ -4,10 +4,22 @@
         <title>WebGL raytracer examples</title>
         <meta charset="utf-8">
         <style>
-        body.fullscreen {
-          margin: 0 !important;
-          overflow: hidden !important;
-        }
+
+          .fullscreen canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+          }
+
+          body {
+            margin: 0;
+            overflow: hidden !important;
+          }
+
+          #shader-container {
+             width: 100vw;
+             height: 100vh;
+          }
         </style>
     </head>
     <body>
