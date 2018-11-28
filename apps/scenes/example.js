@@ -40,30 +40,4 @@ const sceneSource = new SceneBuilder()
   )
   .buildSceneGLSL();
 
-//console.log(sceneSource.split('\n'));
-
-module.exports = {
-  resolution: [640, 480],
-  source: preprocessor.preprocess('mains/monte_carlo.glsl', {
-    renderer: {
-      //file: 'renderer/flat_color_shader.glsl'
-      //file: 'renderer/random_flat_color_shader.glsl'
-      //file: 'renderer/direct_light_diffuse_shader.glsl'
-      //file: 'renderer/pathtracer.glsl'
-      file: 'renderer/bidirectional_tracer_1_light_vertex.glsl'
-    },
-    scene: { source: sceneSource },
-    camera: { file: 'camera/pinhole.glsl' },
-    rand: { file: 'rand/fixed_vecs.glsl' },
-    parameters: { source: `
-      //#define DISABLE_LIGHT_SAMPLING
-    ` }
-  }),
-  monte_carlo: true,
-  refresh_every: 20,
-  uniforms: Object.assign({
-    resolution: 'resolution',
-    base_image: 'previous_frame',
-    frame_number: 'frame_number',
-  }, randHelpers.fixedVecsRandUniforms)
-};
+module.exports = sceneSource;
