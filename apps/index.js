@@ -7,8 +7,6 @@ const BoxInterior = require('../src/surfaces/box_interior.js');
 const randHelpers = require('../src/rand_helpers.js');
 const GUI = require('./my-gui.js');
 
-const sceneSource = require('./scenes/example.js');
-
 let bench;
 
 function render(options) {
@@ -18,6 +16,7 @@ function render(options) {
 
   let resolution;
   if (!isFullScreen) resolution = options.resolution.split('x');
+  options.lightSampling = options.renderer.match(/bidirectional/);
 
   const spec = {
     resolution,
@@ -25,7 +24,7 @@ function render(options) {
       renderer: {
         file: `renderer/${options.renderer}.glsl`
       },
-      scene: { source: sceneSource },
+      scene: { source: options.scene },
       camera: { file: 'camera/pinhole.glsl' },
       rand: { file: 'rand/fixed_vecs.glsl' },
       parameters: { source: Mustache.render(`
@@ -33,6 +32,9 @@ function render(options) {
         {{^tentFilter}}
         #define ENABLE_TENT_FILTER 0
         {{/tentFilter}}
+        {{^lightSampling}}
+        #define DISABLE_LIGHT_SAMPLING
+        {{/lightSampling}}
       `, options)}
     }),
     monte_carlo: true,
@@ -59,6 +61,10 @@ gui.add('resolution', '640x480', [
   '1024x786',
   'fullscreen'
 ]);
+gui.add('scene', 'Cornell Box', {
+  'Example': require('./scenes/example.js'),
+  'Cornell Box': require('./scenes/cornell-box.js'),
+});
 gui.add('renderer', 'bidirectional', {
   'flat': 'random_flat_color_shader',
   'lambert': 'direct_light_diffuse_shader',

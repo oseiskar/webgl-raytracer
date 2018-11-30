@@ -6,6 +6,7 @@ function SceneBuilder() {
   let cameraSource;
 
   const deg2rad = (x) => x / 180.0 * Math.PI;
+  const toFloat = (x) => `float(${x})`;
 
   this.addObject = (surface, position, material) => {
     objects.push({
@@ -29,11 +30,11 @@ function SceneBuilder() {
       };
       const p = Object.assign(defaults, parameters);
       return {
-        fovAngleRad: deg2rad(p.fov),
-        phiRad: deg2rad(-p.pitch),
-        thetaRad: deg2rad(p.yaw),
+        fovAngleRad: toFloat(deg2rad(p.fov)),
+        phiRad: toFloat(deg2rad(-p.pitch)),
+        thetaRad: toFloat(deg2rad(p.yaw)),
         // TODO: roll not supported
-        distance: p.distance,
+        distance: toFloat(p.distance),
         targetList: p.target.join(',')
       };
     }
@@ -79,6 +80,8 @@ function SceneBuilder() {
         samplerName: sampler && sampler.samplerFunctionName,
         getAreaName: sampler && sampler.getAreaFunctionName,
         posList: obj.position.join(','),
+        convex: !tracer.nonConvex,
+        noInside: !!tracer.noInside,
         parameterListLeadingComma: ([''].concat(obj.parameters)).join(', '),
         parameterList: obj.parameters.join(', ')
       };
@@ -156,7 +159,9 @@ function SceneBuilder() {
     emissionMaterials.forEach(mat => {
       for (let i = mat.minObjectId; i <= mat.maxObjectId; ++i) {
         const obj = objectsById[i];
-        lights.push(objectsById[i]);
+        if (obj.samplerName) {
+          lights.push(obj);
+        }
       }
     });
 

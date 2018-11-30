@@ -84,10 +84,12 @@ vec3 render(vec2 xy, vec2 resolution) {
             vec3 emission = zero_vec3;
             if (get_emission(which_object, emission)) {
                 float changeOfVarsTerm = -dot(normal, ray) / (intersection.w*intersection.w);
-                float probThis = changeOfVarsTerm * last_cosine_weight /  M_PI;
-                float probOther = light_sample_area_probability;
+                float probThis, probOther;
 
-                if (!was_diffuse) {
+                if (was_diffuse && has_sampler(which_object)) {
+                  probThis = changeOfVarsTerm * last_cosine_weight /  M_PI;
+                  probOther = light_sample_area_probability;
+                } else {
                     probOther = 0.0;
                     probThis = 1.0;
                 }
