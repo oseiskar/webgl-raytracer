@@ -10,6 +10,7 @@ int find_intersection(vec3 ray_pos, vec3 ray, int prev_object, int inside_object
     vec3 rel_pos;
     bool inside;
     bool prev_self;
+    vec3 rotated_ray;
 
     {{#objects}}
     cur_id = {{id}};
@@ -17,9 +18,18 @@ int find_intersection(vec3 ray_pos, vec3 ray, int prev_object, int inside_object
     prev_self = prev_object == cur_id;
     if (inside || !prev_self {{^convex}}|| true{{/convex}}) {
       rel_pos = ray_pos - vec3({{posList}});
-      cur_isec = {{tracerName}}(rel_pos, ray{{^noInside}}, inside{{/noInside}}{{^convex}}, prev_self{{/convex}} {{parameterListLeadingComma}});
+      rotated_ray = ray;
+      {{#hasRotation}}
+      const mat3 rotation = mat3({{rotationList}});
+      rel_pos = rel_pos * rotation;
+      rotated_ray = ray * rotation;
+      {{/hasRotation}}
+      cur_isec = {{tracerName}}(rel_pos, rotated_ray{{^noInside}}, inside{{/noInside}}{{^convex}}, prev_self{{/convex}} {{parameterListLeadingComma}});
       if (cur_isec.w > 0.0 && (cur_isec.w < intersection.w || which_object == 0)) {
           intersection = cur_isec;
+          {{#hasRotation}}
+          intersection.xyz = rotation * intersection.xyz;
+          {{/hasRotation}}
           which_object = cur_id;
       }
     }

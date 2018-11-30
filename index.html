@@ -37,8 +37,13 @@
     <body>
         <div id="shader-container">
         </div>
-        <script src="glsl-bench/js_libs/twgl.min.js"></script>
-        <script src="glsl-bench/glsl_bench.js"></script>
         <script src="build/bundle.js"></script>
+        <script>
+          const twgl = require('twgl.js');
+        </script>
+        <script src="glsl-bench/glsl_bench.js"></script>
+        <script>
+          require('app').start();
+        </script>
     </body>
 </html>

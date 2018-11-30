@@ -24,6 +24,11 @@ int select_light(out vec3 light_point, out vec3 light_normal, out float sample_p
       area = {{getAreaName}}({{parameterList}});
       if (choice < area) {
         {{samplerName}}(rng, light_point, light_normal {{parameterListLeadingComma}});
+        {{#hasRotation}}
+        const mat3 rotation = mat3({{rotationList}});
+        light_point = rotation * light_point;
+        light_normal = rotation * light_normal;
+        {{/hasRotation}}
         light_point += vec3({{posList}});
         return {{id}};
       }

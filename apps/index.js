@@ -54,23 +54,27 @@ function render(options) {
   });
 }
 
-const gui = new GUI();
-gui.add('resolution', '640x480', [
-  '640x480',
-  '800x600',
-  '1024x786',
-  'fullscreen'
-]);
-gui.add('scene', 'Cornell Box', {
-  'Example': require('./scenes/example.js'),
-  'Cornell Box': require('./scenes/cornell-box.js'),
-});
-gui.add('renderer', 'bidirectional', {
-  'flat': 'random_flat_color_shader',
-  'lambert': 'direct_light_diffuse_shader',
-  'path tracer': 'pathtracer',
-  'bidirectional': 'bidirectional_tracer_1_light_vertex'
-});
-gui.add('lightBounces', 4, [1,2,3,4,5]);
-gui.add('tentFilter', true);
-gui.onChange(render);
+function start() {
+  const gui = new GUI();
+  gui.add('resolution', '640x480', [
+    '640x480',
+    '800x600',
+    '1024x786',
+    'fullscreen'
+  ]);
+  gui.add('scene', 'Cornell Box', {
+    'Example': require('./scenes/example.js'),
+    'Cornell Box': require('./scenes/cornell-box.js'),
+  });
+  gui.add('renderer', 'bidirectional', {
+    'flat': 'random_flat_color_shader',
+    'lambert': 'direct_light_diffuse_shader',
+    'path tracer': 'pathtracer',
+    'bidirectional': 'bidirectional_tracer_1_light_vertex'
+  });
+  gui.add('lightBounces', 4, [1,2,3,4,5]);
+  gui.add('tentFilter', true);
+  gui.onChange(render);
+}
+
+module.exports = { start };

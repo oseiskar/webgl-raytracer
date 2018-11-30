@@ -1,6 +1,23 @@
 const Mustache = require('mustache');
 const tracerData = require('../glsl/index.js');
 
+function positionAndRotation(m) {
+  if (m.length == 3)
+    return { position: m };
+
+  if (m.length != 16)
+    throw new Error('invalid transformation, expected 3-vector or 16 entries of a 4x4 row-major matrix');
+
+  return {
+    position: [m[12], m[13], m[14]],
+    rotation: [
+      m[0], m[1], m[2],
+      m[4], m[5], m[6],
+      m[8], m[9], m[10]
+    ]
+  };
+}
+
 function SceneBuilder() {
   const objects = [];
   let cameraSource;
@@ -8,13 +25,13 @@ function SceneBuilder() {
   const deg2rad = (x) => x / 180.0 * Math.PI;
   const toFloat = (x) => `float(${x})`;
 
-  this.addObject = (surface, position, material) => {
+  this.addObject = (surface, positionOrMatrix, material) => {
     objects.push({
       tracer: surface.tracer,
       sampler: surface.sampler,
       parameters: surface.parameters,
-      position,
-      material
+      material,
+      ...positionAndRotation(positionOrMatrix),
     });
     return this;
   };
@@ -80,6 +97,8 @@ function SceneBuilder() {
         samplerName: sampler && sampler.samplerFunctionName,
         getAreaName: sampler && sampler.getAreaFunctionName,
         posList: obj.position.join(','),
+        hasRotation: !!obj.rotation,
+        rotationList: obj.rotation && obj.rotation.join(','),
         convex: !tracer.nonConvex,
         noInside: !!tracer.noInside,
         parameterListLeadingComma: ([''].concat(obj.parameters)).join(', '),

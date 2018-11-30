@@ -3,14 +3,15 @@
     "brfs": "^2.0.1",
     "browserify": "^16.2.3",
     "dat.gui": "^0.7.3",
-    "mustache": "^3.0.1"
+    "mustache": "^3.0.1",
+    "twgl.js": "^4.5.2"
   },
   "devDependencies": {
     "watchify": "^3.11.0"
   },
   "scripts": {
     "build": "./build.sh && npm run browserify",
-    "browserify": "browserify -t brfs apps/index.js -o build/bundle.js",
-    "watch": "watchify -t brfs apps/index.js -o build/bundle.js"
+    "browserify": "browserify -r twgl.js -t brfs -r ./apps/index.js:app -o build/bundle.js",
+    "watch": "watchify -r twgl.js -t brfs -r ./apps/index.js:app -o build/bundle.js"
   }
 }
