@@ -8,7 +8,8 @@ const GUI = require('./my-gui.js');
 
 const sceneBuilders = {
   'Example': require('./scenes/example.js'),
-  'Cornell Box': require('./scenes/cornell-box.js')
+  'Cornell Box': require('./scenes/cornell-box.js'),
+  'Stair Spiral': require('./scenes/stair-spiral.js')
 };
 
 let bench;
