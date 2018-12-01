@@ -5,7 +5,7 @@
 const m4 = require('twgl.js').m4;
 
 const SceneBuilder = require('../../src/scene_builder.js');
-const HalfSpace = require('../../src/surfaces/half_space.js');
+const Plane = require('../../src/surfaces/plane.js');
 const Box = require('../../src/surfaces/box.js');
 const MaterialHelpers = require('../../src/material_helpers.js');
 
@@ -40,11 +40,11 @@ function buildScene(shaderColorType = 'rgb') {
       target: [278, 0, 273], // assumed
       distance: 800
     })
-    .addObject(new HalfSpace([1, 0, 0]), [0,0,0], m.leftWall)
-    .addObject(new HalfSpace([-1, 0, 0]), [548,0,0], m.rightWall)
-    .addObject(new HalfSpace([0, -1, 0]), [0,559,0], m.others) // back wall
-    .addObject(new HalfSpace([0, 0, 1]), [0,0,0], m.others) // floor
-    .addObject(new HalfSpace([0, 0, -1]), [0,0,548], m.others) // ceiling
+    .addObject(new Plane([1, 0, 0]), [0,0,0], m.leftWall)
+    .addObject(new Plane([-1, 0, 0]), [548,0,0], m.rightWall)
+    .addObject(new Plane([0, -1, 0]), [0,559,0], m.others) // back wall
+    .addObject(new Plane([0, 0, 1]), [0,0,0], m.others) // floor
+    .addObject(new Plane([0, 0, -1]), [0,0,548], m.others) // ceiling
     .addObject(new Box(165/2, 165/2, 330/2),
         m4.rotateZ(m4.translation([168, 368, 330/2]), deg2rad(18)),
         m.others) // "short block", about
