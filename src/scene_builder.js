@@ -27,10 +27,8 @@ function SceneBuilder() {
 
   this.addObject = (surface, positionOrMatrix, material) => {
     objects.push({
-      tracer: surface.tracer,
-      sampler: surface.sampler,
-      parameters: surface.parameters,
       material,
+      ...surface,
       ...positionAndRotation(positionOrMatrix),
     });
     return this;
@@ -62,14 +60,6 @@ function SceneBuilder() {
     return this;
   };
 
-  const nextUniqueMaterialId = (() => {
-    let counter = 0;
-    return () => {
-      counter++;
-      return `__unique_material_${counter}`;
-    }
-  })();
-
   this.buildSceneGLSL = () => {
     const uniqueTracers = [];
     const uniqueSamplers = [];
@@ -99,15 +89,15 @@ function SceneBuilder() {
         posList: obj.position.join(','),
         hasRotation: !!obj.rotation,
         rotationList: obj.rotation && obj.rotation.join(','),
-        convex: !tracer.nonConvex,
-        noInside: !!tracer.noInside,
+        convex: !obj.nonConvex,
+        noInside: !!obj.noInside,
         parameterListLeadingComma: ([''].concat(obj.parameters)).join(', '),
         parameterList: obj.parameters.join(', ')
       };
       objectViews.push(objectView);
 
       const material = obj.material;
-      let materialId = material.id || nextUniqueMaterialId();
+      let materialId = material.id || JSON.stringify(material);
       if (!objectsPerMaterial[materialId]) {
         objectsPerMaterial[materialId] = [];
         uniqueMaterials.push({
