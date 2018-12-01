@@ -80,9 +80,10 @@ vec3 render(vec2 xy, vec2 resolution) {
         } else {
             vec3 normal = intersection.xyz;
             ray_pos += intersection.w * ray;
+            int material_id = get_material_id(which_object);
 
             vec3 emission = zero_vec3;
-            if (get_emission(which_object, emission)) {
+            if (get_emission(material_id, emission)) {
                 float changeOfVarsTerm = -dot(normal, ray) / (intersection.w*intersection.w);
                 float probThis, probOther;
 
@@ -118,13 +119,13 @@ vec3 render(vec2 xy, vec2 resolution) {
                 normal = -normal;
             }
 
-            if (random_choice(get_reflectivity(which_object), choice_sample)) {
+            if (random_choice(get_reflectivity(material_id), choice_sample)) {
                 // full reflection
                 ray = ray - 2.0*dot(normal, ray)*normal;
                 was_diffuse = false;
-            } else if (random_choice(get_transparency(which_object), choice_sample)) {
+            } else if (random_choice(get_transparency(material_id), choice_sample)) {
                 // refraction
-                float eta = 1.0 / get_ior(which_object);
+                float eta = 1.0 / get_ior(material_id);
 
                 was_diffuse = false;
                 int next_object = which_object;
@@ -153,7 +154,7 @@ vec3 render(vec2 xy, vec2 resolution) {
                 ray = get_random_cosine_weighted(normal, rng);
                 last_cosine_weight = dot(normal, ray);
 
-                ray_color *= get_diffuse(which_object) / M_PI;
+                ray_color *= get_diffuse(material_id) / M_PI;
                 was_diffuse = true;
             }
 

@@ -21,10 +21,11 @@ vec3 render(vec2 xy, vec2 resolution) {
     if (which_object == 0) {
         return vec3(0.0, 0.0, 0.0);
     } else {
+        int material_id = get_material_id(which_object);
         vec3 emission;
-        if (get_emission(which_object, emission)) {
+        if (get_emission(material_id, emission)) {
             return emission;
         }
-        return get_diffuse(which_object);
+        return get_diffuse(material_id);
     }
 }

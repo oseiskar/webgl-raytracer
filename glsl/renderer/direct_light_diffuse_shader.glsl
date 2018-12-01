@@ -23,6 +23,6 @@ vec3 render(vec2 xy, vec2 resolution) {
     if (which_object == 0) {
         return vec3(0.0, 0.0, 0.0);
     } else {
-        return get_diffuse(which_object) * max(0.0, dot(intersection.xyz, light_dir)) * BRIGHTNESS;
+        return get_diffuse(get_material_id(which_object)) * max(0.0, dot(intersection.xyz, light_dir)) * BRIGHTNESS;
     }
 }
