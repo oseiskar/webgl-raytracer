@@ -16,5 +16,23 @@ module.exports = {
     "random_uniforms_6": "random_uniform_4",
     "random_uniforms_7": "random_uniform_4",
     "random_uniforms_8": "random_uniform_4"
+  },
+  texturesRandUniforms(nGauss4, nUniform4) {
+    return {
+      random_gauss: {
+        random: {
+          distribution: 'normal',
+          size: nGauss4*4
+        }
+      },
+      n_random_gauss: nGauss4,
+      random_uniform: {
+        random: {
+          distribution: 'uniform',
+          size: nUniform4*4
+        }
+      },
+      n_random_uniform: nUniform4
+    };
   }
 };

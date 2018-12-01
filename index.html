@@ -32,10 +32,28 @@
             width: 100vw;
             height: 100vh;
           }
+
+          .shader-source-container {
+            padding-top: 3%;
+            display: flex;
+            justify-content: center;
+          }
+
+          .hidden {
+            display: none;
+          }
+
+          #shader-source {
+            max-width: 640px;
+          }
         </style>
     </head>
     <body>
         <div id="shader-container">
+        </div>
+        <div class="shader-source-container">
+          <pre id="shader-source" class="hidden">
+          </pre>
         </div>
         <script src="build/bundle.js"></script>
         <script>
