@@ -24,7 +24,7 @@ function render(options) {
 
   const nRands = parseInt(options.lightBounces) + 5;
 
-  const sceneSource = sceneBuilders[options.scene]();
+  const sceneSource = sceneBuilders[options.scene](options.colorModel);
 
   const spec = {
     resolution,
@@ -86,6 +86,7 @@ function start() {
     'path tracer': 'pathtracer',
     'bidirectional': 'bidirectional_tracer_1_light_vertex'
   });
+  gui.add('colorModel', 'rgb', ['rgb', 'grayscale'])
   gui.add('lightBounces', 4, [1,2,3,4,5]);
   gui.add('tentFilter', true);
   gui.add('showSource', false);

@@ -36,6 +36,7 @@ function buildScene(shaderColorType = 'rgb') {
   const m = MaterialHelpers.autoConvert(materials, shaderColorType);
 
   return new SceneBuilder()
+    .setColorModel(shaderColorType)
     .setFixedPinholeCamera({
       fov: 50,
       yaw: 300,

@@ -12,6 +12,7 @@ vec3 render(vec2 xy, vec2 resolution) {
 
     vec3 ray_pos;
     vec3 ray;
+    vec3 white = vec3(1,1,1);
     get_camera_ray(xy, resolution, ray_pos, ray, rng);
 
     // find intersection
@@ -24,8 +25,8 @@ vec3 render(vec2 xy, vec2 resolution) {
         int material_id = get_material_id(which_object);
         vec3 emission;
         if (get_emission(material_id, emission)) {
-            return emission;
+            return emission * white;
         }
-        return get_diffuse(material_id);
+        return get_diffuse(material_id) * white;
     }
 }

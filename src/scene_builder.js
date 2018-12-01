@@ -21,6 +21,7 @@ function positionAndRotation(m) {
 function SceneBuilder() {
   const objects = [];
   let cameraSource;
+  let shaderColorModel = 'rgb';
 
   const deg2rad = (x) => x / 180.0 * Math.PI;
   const toFloat = (x) => `float(${x})`;
@@ -31,6 +32,11 @@ function SceneBuilder() {
       ...surface,
       ...positionAndRotation(positionOrMatrix),
     });
+    return this;
+  };
+
+  this.setColorModel = (colorModel) => {
+    shaderColorModel = colorModel;
     return this;
   };
 
@@ -131,26 +137,50 @@ function SceneBuilder() {
       return list;
     }
 
-    function buildGenericVec3Property(name, defaultValue = 'vec3(0.0, 0.0, 0.0)') {
+    function buildGenericProperty(name, type, defaultValue) {
+      let formatType;
+      if (type === 'vec3') {
+        formatType = toVec3;
+        defaultValue = defaultValue || 'vec3(0, 0, 0)';
+      } else {
+        formatType = x => `float(${x})`;
+        defaultValue = defaultValue || '0.0';
+      }
       return {
         name,
-        type: 'vec3',
+        type,
         default: defaultValue,
         materials: addFirstFlag(uniqueMaterials
           .filter(mat => mat.material[name])
           .map(mat => ({
             minObjectId: mat.minObjectId,
             maxObjectId: mat.maxObjectId,
-            value: toVec3(mat.material[name])
+            value: formatType(mat.material[name])
           })))
       }
     }
 
-    function buildGenericScalarProperty(name, defaultValue = '0.0') {
+    function buildProbabilisticProperty(name) {
+      function toProbAndValue(value) {
+        if (shaderColorModel === 'rgb') {
+          const prob = (value[0]+value[1]+value[2])/3;
+          const col = value.map(x => x/prob);
+
+          return {
+            probability: `float(${prob})`,
+            value: toVec3(col)
+          };
+        } else if (shaderColorModel === 'grayscale') {
+          return {
+            probability: `float(${value})`,
+            value: '1.0'
+          };
+        } else throw new Error(`invalid color model ${shaderColorModel}`);
+      }
+
       return {
         name,
         type: 'float',
-        default: defaultValue,
         materials: addFirstFlag(uniqueMaterials
           .filter(mat => mat.material.hasOwnProperty(name))
           .map(mat => ({
@@ -158,12 +188,14 @@ function SceneBuilder() {
             maxObjectId: mat.maxObjectId,
             // helps with integer values 1 != 1.0 == 1f == float(1)
             // which cause errors in GLSL
-            value: `float(${mat.material[name]})`
+            ...toProbAndValue(mat.material[name])
           })))
       }
     }
 
-    const emissionMaterials = buildGenericVec3Property('emission').materials;
+    const colorType = shaderColorModel === 'rgb' ? 'vec3' : 'float';
+
+    const emissionMaterials = buildGenericProperty('emission', colorType).materials;
     const lights = [];
     emissionMaterials.forEach(mat => {
       for (let i = mat.minObjectId; i <= mat.maxObjectId; ++i) {
@@ -180,12 +212,15 @@ function SceneBuilder() {
         objects: objectViews
       }),
       Mustache.render(tracerData.templates['if_else_materials.glsl.mustache'], {
+        colorType,
         materialEmissions: emissionMaterials,
-        genericProperties: [
-          buildGenericVec3Property('diffuse'),
-          buildGenericScalarProperty('reflectivity'),
-          buildGenericScalarProperty('transparency'),
-          buildGenericScalarProperty('ior', defaultValue='1.0')
+        getterProperties: [
+          buildGenericProperty('diffuse', colorType),
+          buildGenericProperty('ior', 'float', defaultValue='1.0')
+        ],
+        probabilisticProperties: [
+          buildProbabilisticProperty('reflectivity'),
+          buildProbabilisticProperty('transparency')
         ]
       }),
       Mustache.render(tracerData.templates['select_light.glsl.mustache'], {

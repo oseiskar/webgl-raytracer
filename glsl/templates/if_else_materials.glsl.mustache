@@ -1,15 +1,16 @@
-bool get_emission(int which_obj, out vec3 emission) {
+#define color_type {{colorType}}
+
+bool get_emission(int which_obj, out color_type emission) {
   {{#materialEmissions}}
   {{^first}}else {{/first}}if (which_obj >= {{minObjectId}} && which_obj <= {{maxObjectId}}) {
     emission = {{value}};
     return true;
   }
   {{/materialEmissions}}
-  emission = vec3(0.0, 0.0, 0.0);
   return false;
 }
 
-{{#genericProperties}}
+{{#getterProperties}}
 {{type}} get_{{name}}(int which_obj) {
   {{#materials}}
   {{^first}}else {{/first}}if (which_obj >= {{minObjectId}} && which_obj <= {{maxObjectId}}) {
@@ -18,6 +19,18 @@ bool get_emission(int which_obj, out vec3 emission) {
   {{/materials}}
   return {{default}};
 }
-{{/genericProperties}}
+{{/getterProperties}}
+
+{{#probabilisticProperties}}
+float get_{{name}}(int which_obj, out color_type color) {
+  {{#materials}}
+  {{^first}}else {{/first}}if (which_obj >= {{minObjectId}} && which_obj <= {{maxObjectId}}) {
+    color = {{value}};
+    return {{probability}};
+  }
+  {{/materials}}
+  return 0.0;
+}
+{{/probabilisticProperties}}
 
 #define get_material_id(x) x

@@ -57,17 +57,18 @@ vec3 render(vec2 xy, vec2 resolution) {
     const vec3 zero_vec3 = vec3(0.0, 0.0, 0.0);
     int prev_object = 0; // assumed to be OBJ_NONE
     int inside_object = 0;
-    vec3 cur_color = zero_vec3;
+    vec3 result_color = zero_vec3;
 
     bool was_diffuse = false;
     float last_cosine_weight = 0.0;
 
     vec3 light_point, light_normal;
     float light_sample_area_probability;
-    vec3 light_emission;
     int light_object = select_light(light_point, light_normal, light_sample_area_probability, rng);
+    color_type light_emission;
 
     get_emission(light_object, light_emission);
+    color_type color;
 
     float choice_sample = rand_next_uniform(rng);
 
@@ -82,8 +83,7 @@ vec3 render(vec2 xy, vec2 resolution) {
             ray_pos += intersection.w * ray;
             int material_id = get_material_id(which_object);
 
-            vec3 emission = zero_vec3;
-            if (get_emission(material_id, emission)) {
+            if (get_emission(material_id, color)) {
                 float changeOfVarsTerm = -dot(normal, ray) / (intersection.w*intersection.w);
                 float probThis, probOther;
 
@@ -94,7 +94,7 @@ vec3 render(vec2 xy, vec2 resolution) {
                     probOther = 0.0;
                     probThis = 1.0;
                 }
-                cur_color += ray_color * emission * weight1(probThis, probOther);
+                result_color += ray_color * color * weight1(probThis, probOther);
             }
 
             // visibility test
@@ -119,11 +119,14 @@ vec3 render(vec2 xy, vec2 resolution) {
                 normal = -normal;
             }
 
-            if (random_choice(get_reflectivity(material_id), choice_sample)) {
+            if (random_choice(get_reflectivity(material_id, color), choice_sample)) {
                 // full reflection
                 ray = ray - 2.0*dot(normal, ray)*normal;
+                ray_color *= color;
                 was_diffuse = false;
-            } else if (random_choice(get_transparency(material_id), choice_sample)) {
+            } else if (random_choice(get_transparency(material_id, color), choice_sample)) {
+                ray_color *= color;
+
                 // refraction
                 float eta = 1.0 / get_ior(material_id);
 
@@ -171,7 +174,7 @@ vec3 render(vec2 xy, vec2 resolution) {
                 float probThis = light_sample_area_probability;
                 float intensity = dot(normal, shadow_ray) * changeOfVarsTerm / probThis;
 
-                cur_color += ray_color * light_emission * intensity * weight2(probThis, probOther);
+                result_color += ray_color * light_emission * intensity * weight2(probThis, probOther);
             }
 
             if (was_diffuse) {
@@ -182,5 +185,5 @@ vec3 render(vec2 xy, vec2 resolution) {
             prev_object = which_object;
         }
     }
-    return cur_color;
+    return result_color;
 }
