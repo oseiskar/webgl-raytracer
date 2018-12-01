@@ -1,11 +1,15 @@
 const Mustache = require('mustache');
 
 const preprocessor = require('../src/preprocess_helpers.js');
-const SceneBuilder = require('../src/scene_builder.js');
 const Sphere = require('../src/surfaces/sphere.js');
 const BoxInterior = require('../src/surfaces/box_interior.js');
 const randHelpers = require('../src/rand_helpers.js');
 const GUI = require('./my-gui.js');
+
+const sceneBuilders = {
+  'Example': require('./scenes/example.js'),
+  'Cornell Box': require('./scenes/cornell-box.js')
+};
 
 let bench;
 
@@ -20,13 +24,15 @@ function render(options) {
 
   const nRands = parseInt(options.lightBounces) + 5;
 
+  const sceneSource = sceneBuilders[options.scene]();
+
   const spec = {
     resolution,
     source: preprocessor.preprocess('mains/monte_carlo.glsl', {
       renderer: {
         file: `renderer/${options.renderer}.glsl`
       },
-      scene: { source: options.scene },
+      scene: { source: sceneSource },
       camera: { file: 'camera/pinhole.glsl' },
       rand: { file: 'rand/textures.glsl' },
       parameters: { source: Mustache.render(`
@@ -73,10 +79,7 @@ function start() {
     '1024x786',
     'fullscreen'
   ]);
-  gui.add('scene', 'Cornell Box', {
-    'Example': require('./scenes/example.js'),
-    'Cornell Box': require('./scenes/cornell-box.js'),
-  });
+  gui.add('scene', 'Cornell Box', Object.keys(sceneBuilders));
   gui.add('renderer', 'bidirectional', {
     'flat': 'random_flat_color_shader',
     'lambert': 'direct_light_diffuse_shader',
