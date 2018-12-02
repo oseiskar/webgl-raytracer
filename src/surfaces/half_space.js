@@ -11,6 +11,11 @@ function HalfSpace(normal) {
     code: tracerCode
   }
   this.parameters = [`vec3(${normal.join(',')})`]; // also works with integers
+
+  this.parametersAsList = () => {
+    return [...normal];
+  };
+  this.parametersFromVec4Code = 'parameters.xyz';
 }
 
 module.exports = HalfSpace;

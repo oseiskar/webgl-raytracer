@@ -1,6 +1,8 @@
 const Mustache = require('mustache');
 const tracerData = require('../glsl/index.js');
 
+// this file is also becoming quite terrible
+
 function positionAndRotation(m) {
   if (m.length == 3)
     return { position: m };
@@ -45,8 +47,7 @@ function buildIfElseMaterials(uniqueMaterials, objectsById, shaderColorModel) {
       materials: addFirstFlag(uniqueMaterials
         .filter(mat => mat.material[name])
         .map(mat => ({
-          minObjectId: mat.minObjectId,
-          maxObjectId: mat.maxObjectId,
+          objects: mat.objects.map(obj => ({ id: obj.id })),
           value: formatType(mat.material[name])
         })))
     }
@@ -76,10 +77,7 @@ function buildIfElseMaterials(uniqueMaterials, objectsById, shaderColorModel) {
       materials: addFirstFlag(uniqueMaterials
         .filter(mat => mat.material.hasOwnProperty(name))
         .map(mat => ({
-          minObjectId: mat.minObjectId,
-          maxObjectId: mat.maxObjectId,
-          // helps with integer values 1 != 1.0 == 1f == float(1)
-          // which cause errors in GLSL
+          objects: mat.objects.map(obj => ({ id: obj.id })),
           ...toProbAndValue(mat.material[name])
         })))
     }
@@ -178,7 +176,8 @@ function SceneBuilder() {
   const objects = [];
   let cameraSource;
   let shaderColorModel = 'rgb';
-  let ifElseMaterials = false;
+  let enableMaterialTextures = true;
+  let enableGeometryTextures = true;
 
   const deg2rad = (x) => x / 180.0 * Math.PI;
   const toFloat = (x) => `float(${x})`;
@@ -226,18 +225,18 @@ function SceneBuilder() {
   this.buildScene = () => {
     const uniqueTracers = [];
     const uniqueSamplers = [];
-    const tracerNameSet = {};
     const samplerNameSet = {};
     const objectViews = [];
     const uniqueMaterials = [];
+    const objectsPerTracer = {};
     const objectsPerMaterial = {};
     const objectsById = {};
 
     objects.forEach(obj => {
       const tracer = obj.tracer;
-      if (!tracerNameSet[tracer.name]) {
-        tracerNameSet[tracer.name] = true;
-        uniqueTracers.push(tracer);
+      if (!objectsPerTracer[tracer.name]) {
+        objectsPerTracer[tracer.name] = [];
+        uniqueTracers.push({...tracer});
       }
       const sampler = obj.sampler;
       if (sampler && !samplerNameSet[sampler.name]) {
@@ -258,6 +257,7 @@ function SceneBuilder() {
         parameterList: obj.parameters.join(', ')
       };
       objectViews.push(objectView);
+      objectsPerTracer[tracer.name].push(objectView);
 
       const material = obj.material;
       let materialId = material.id || JSON.stringify(material);
@@ -271,37 +271,63 @@ function SceneBuilder() {
       objectsPerMaterial[materialId].push(objectView);
     });
 
+    const geometryData = {
+      position: [[]],
+      rotation: [[],[],[]],
+      parameter: [[]]
+    };
     let objectId = 1;
+    uniqueTracers.forEach(uniqTracer => {
+      uniqTracer.objects = objectsPerTracer[uniqTracer.name];
+      uniqTracer.minObjectId = objectId;
+      uniqTracer.convex = uniqTracer.objects[0].convex;
+      uniqTracer.noInside = uniqTracer.objects[0].noInside;
+      uniqTracer.objects.forEach(objectView => {
+        objectView.id = objectId;
+        objectsById[objectId] = objectView;
+        objectId++;
+        uniqTracer.anyRotated = uniqTracer.anyRotated || objectView.hasRotation;
+        if (enableGeometryTextures) {
+          const obj = objectView.obj;
+
+          geometryData.position[0].push(obj.position.concat([0]));
+          const r = obj.rotation || [1,0,0,0,1,0,0,0,1];
+          geometryData.rotation[0].push([r[0],r[1],r[2], 0]);
+          geometryData.rotation[1].push([r[3],r[4],r[5], 0]);
+          geometryData.rotation[2].push([r[6],r[7],r[8], 0]);
+
+          if (obj.parameters) {
+            uniqTracer.parameterListLeadingComma = ', ' + obj.parametersFromVec4Code;
+          }
+          const params = obj.parametersAsList();
+          while (params.length < 4) params.push(0);
+          geometryData.parameter[0].push(params);
+        }
+      });
+      uniqTracer.maxObjectId = objectId-1;
+      uniqTracer.nObjects = objectViews.length;
+    });
+
     let materialId = 0;
     uniqueMaterials.forEach(material => {
       material.objects.forEach(objectView => {
         objectView.materialId = materialId;
-        objectView.id = objectId;
-        if (material.minObjectId === undefined) {
-          material.minObjectId = objectId;
-        }
-        material.maxObjectId = objectId;
-        objectsById[objectId] = objectView;
-        objectId++;
       });
       materialId++;
     });
 
     const lights = [];
     uniqueMaterials.filter(mat => mat.material.emission).forEach(mat => {
-      for (let i = mat.minObjectId; i <= mat.maxObjectId; ++i) {
-        const obj = objectsById[i];
+      mat.objects.forEach(obj => {
         if (obj.samplerName) {
           lights.push(obj);
         }
-      }
+      });
     });
 
     let materialCode;
     const materialData = {};
-    if (ifElseMaterials) {
-      materialCode = buildIfElseMaterials(uniqueMaterials, objectsById, shaderColorModel);
-    } else {
+    if (enableMaterialTextures) {
       const { materialTextures, code } = buildTextureMaterials(uniqueMaterials, objectsById, shaderColorModel);
       materialCode = code;
       Object.keys(materialTextures).forEach(property => {
@@ -309,10 +335,23 @@ function SceneBuilder() {
           data: materialTextures[property]
         };
       });
+    } else {
+      materialCode = buildIfElseMaterials(uniqueMaterials, objectsById, shaderColorModel);
+    }
+
+    const geometryTextureData = {};
+    let geometryTemplate = 'geometry.glsl.mustache';
+    if (enableGeometryTextures) {
+      geometryTemplate = 'texture_geometry.glsl.mustache';
+      Object.keys(geometryData).forEach(property => {
+        geometryTextureData[property+'_texture'] = {
+          data: geometryData[property]
+        };
+      });
     }
 
     const source = [
-      Mustache.render(tracerData.templates['geometry.glsl.mustache'], {
+      Mustache.render(tracerData.templates[geometryTemplate], {
         tracers: uniqueTracers,
         objects: objectViews
       }),
@@ -326,7 +365,10 @@ function SceneBuilder() {
 
     return {
       source,
-      data: materialData
+      data: {
+        ...materialData,
+        ...geometryTextureData
+      }
     };
   };
 };

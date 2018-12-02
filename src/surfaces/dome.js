@@ -10,6 +10,11 @@ function Dome(radius) {
   // no sampler since it makes usually no sense to sample a light dome
   this.parameters = [`float(${radius})`]; // also works with integers
   this.noInside = true;
+
+  this.parametersAsList = () => {
+    return [radius];
+  };
+  this.parametersFromVec4Code = 'parameters.x';
 }
 
 module.exports = Dome;

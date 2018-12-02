@@ -12,6 +12,11 @@ function Plane(normal) {
   }
   this.parameters = [`vec3(${normal.join(',')})`]; // also works with integers
   this.noInside = true;
+
+  this.parametersAsList = () => {
+    return [...normal];
+  };
+  this.parametersFromVec4Code = 'parameters.xyz';
 }
 
 module.exports = Plane;

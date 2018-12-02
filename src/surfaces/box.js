@@ -14,6 +14,11 @@ function Box(width, height, depth) {
     code: tracerData.surfaces.samplers['box.glsl']
   }
   this.parameters = [`vec3(${width}, ${height}, ${depth})`];
+
+  this.parametersAsList = () => {
+    return [width, height, depth];
+  };
+  this.parametersFromVec4Code = 'parameters.xyz';
 }
 
 module.exports = Box;

@@ -2,7 +2,10 @@
 
 bool get_emission(int which_obj, out color_type emission) {
   {{#materialEmissions}}
-  {{^first}}else {{/first}}if (which_obj >= {{minObjectId}} && which_obj <= {{maxObjectId}}) {
+  {{^first}}else {{/first}}if (false
+    {{#objects}}
+    || which_obj == {{id}}
+    {{/objects}}) {
     emission = {{value}};
     return true;
   }
@@ -13,7 +16,10 @@ bool get_emission(int which_obj, out color_type emission) {
 {{#getterProperties}}
 {{type}} get_{{name}}(int which_obj) {
   {{#materials}}
-  {{^first}}else {{/first}}if (which_obj >= {{minObjectId}} && which_obj <= {{maxObjectId}}) {
+  {{^first}}else {{/first}}if (false
+    {{#objects}}
+    || which_obj == {{id}}
+    {{/objects}}) {
     return {{value}};
   }
   {{/materials}}
@@ -24,7 +30,10 @@ bool get_emission(int which_obj, out color_type emission) {
 {{#probabilisticProperties}}
 float get_{{name}}(int which_obj, out color_type color) {
   {{#materials}}
-  {{^first}}else {{/first}}if (which_obj >= {{minObjectId}} && which_obj <= {{maxObjectId}}) {
+  {{^first}}else {{/first}}if (false
+    {{#objects}}
+    || which_obj == {{id}}
+    {{/objects}}) {
     color = {{value}};
     return {{probability}};
   }

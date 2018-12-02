@@ -14,6 +14,11 @@ function Sphere(radius) {
     code: tracerData.surfaces.samplers['sphere.glsl']
   }
   this.parameters = [`float(${radius})`]; // also works with integers
+
+  this.parametersAsList = () => {
+    return [radius];
+  };
+  this.parametersFromVec4Code = 'parameters.x';
 }
 
 module.exports = Sphere;

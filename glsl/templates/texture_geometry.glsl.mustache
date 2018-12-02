@@ -1,0 +1,46 @@
+#include "util/math.glsl"
+
+{{#tracers}}
+{{{code}}}
+{{/tracers}}
+
+uniform sampler2D position_texture;
+uniform sampler2D rotation_texture;
+uniform sampler2D parameter_texture;
+
+int find_intersection(vec3 ray_pos, vec3 ray, int prev_object, int inside_object, out vec4 intersection) {
+    int which_object = 0;
+    {{#tracers}}
+    for (int cur_id={{minObjectId}}; cur_id <= {{maxObjectId}}; ++cur_id) {
+        bool inside = inside_object == cur_id;
+        bool prev_self = prev_object == cur_id;
+        if (inside || !prev_self {{^convex}}|| true{{/convex}}) {
+            float tex_coord = float(cur_id-1) / float({{nObjects}}-1);
+            vec3 object_pos = texture2D(position_texture, vec2(tex_coord, 0.0)).xyz;
+            vec3 rel_pos = ray_pos - object_pos;
+            vec3 rotated_ray = ray;
+
+            {{#anyRotated}}
+            mat3 rotation = mat3(
+              texture2D(rotation_texture, vec2(tex_coord, 0.0)).xyz,
+              texture2D(rotation_texture, vec2(tex_coord, 0.5)).xyz,
+              texture2D(rotation_texture, vec2(tex_coord, 1.0)).xyz);
+
+            rel_pos = rel_pos * rotation;
+            rotated_ray = ray * rotation;
+            {{/anyRotated}}
+
+            vec4 parameters = texture2D(parameter_texture, vec2(tex_coord, 0.0));
+            vec4 cur_isec = {{name}}(rel_pos, rotated_ray{{^noInside}}, inside{{/noInside}}{{^convex}}, prev_self{{/convex}} {{parameterListLeadingComma}});
+            if (cur_isec.w > 0.0 && (cur_isec.w < intersection.w || which_object == 0)) {
+                intersection = cur_isec;
+                {{#anyRotated}}
+                intersection.xyz = rotation * intersection.xyz;
+                {{/anyRotated}}
+                which_object = cur_id;
+            }
+        }
+    }
+    {{/tracers}}
+    return which_object;
+}
