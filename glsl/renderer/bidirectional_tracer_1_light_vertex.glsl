@@ -67,7 +67,7 @@ vec3 render(vec2 xy, vec2 resolution) {
     int light_object = select_light(light_point, light_normal, light_sample_area_probability, rng);
     color_type light_emission;
 
-    get_emission(light_object, light_emission);
+    get_emission(get_material_id(light_object), light_emission);
     color_type color;
 
     float choice_sample = rand_next_uniform(rng);

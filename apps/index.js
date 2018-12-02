@@ -24,7 +24,7 @@ function render(options) {
 
   const nRands = parseInt(options.lightBounces) + 5;
 
-  const sceneSource = sceneBuilders[options.scene](options.colorModel);
+  const { source, data } = sceneBuilders[options.scene](options.colorModel);
 
   const spec = {
     resolution,
@@ -32,7 +32,7 @@ function render(options) {
       renderer: {
         file: `renderer/${options.renderer}.glsl`
       },
-      scene: { source: sceneSource },
+      scene: { source },
       camera: { file: 'camera/pinhole.glsl' },
       rand: { file: 'rand/textures.glsl' },
       parameters: { source: Mustache.render(`
@@ -52,17 +52,24 @@ function render(options) {
       resolution: 'resolution',
       base_image: 'previous_frame',
       frame_number: 'frame_number',
+      ...data,
       ...randHelpers.texturesRandUniforms(nRands, nRands)
     }
   };
 
   if (bench) bench.destroy();
 
-  const srcCodeElement = document.getElementById('shader-source');
   if (options.showSource) {
-    srcCodeElement.innerHTML = spec.source;
+    document.getElementById('shader-source').innerHTML = spec.source;
   }
-  srcCodeElement.classList.toggle('hidden', !options.showSource);
+  document.getElementById('shader-source-container').classList.toggle('hidden', !options.showSource);
+
+  document.getElementById('copy-to-clipboard-button').onclick = () => {
+    const textarea = document.getElementById('copy-to-clipboard-area');
+    textarea.value = JSON.stringify(spec);
+    textarea.select();
+    document.execCommand('copy');
+  };
 
   bench = new GLSLBench({ element, spec });
   bench.onError((err) => {

@@ -38,7 +38,6 @@ vec3 render(vec2 xy, vec2 resolution) {
             ray_pos += intersection.w * ray;
             int material_id = get_material_id(which_object);
 
-            vec3 emission = zero_vec3;
             if (get_emission(material_id, color)) {
                 result_color += ray_color * color;
             }
@@ -57,7 +56,7 @@ vec3 render(vec2 xy, vec2 resolution) {
                 // refraction
                 float eta = 1.0 / get_ior(material_id);
 
-                int next_object = material_id;
+                int next_object = which_object;
 
                 // out
                 if (inside_object == which_object) {

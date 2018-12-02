@@ -53,7 +53,7 @@ function buildScene(shaderColorType = 'rgb') {
         m4.rotateZ(m4.translation([351, 186, 165/2]), deg2rad(-18)),
         m.others) // "tall block", about
     .addObject(new Box(130/2, 130/2, 0.1 /* artificial thickness */), [278, 279, 548], m.light)
-    .buildSceneGLSL();
+    .buildScene();
 }
 
 module.exports = buildScene;

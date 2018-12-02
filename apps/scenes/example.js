@@ -53,7 +53,7 @@ function buildScene(shaderColorType = 'rgb') {
       [0.0, 0.0, ROOM_H*0.5],
       m.walls
     )
-    .buildSceneGLSL();
+    .buildScene();
 }
 
 module.exports = buildScene;

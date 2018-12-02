@@ -33,27 +33,45 @@
             height: 100vh;
           }
 
-          .shader-source-container {
+          #shader-source-container {
             padding-top: 3%;
             display: flex;
             justify-content: center;
+            padding-bottom: 3%;
           }
 
           .hidden {
-            display: none;
+            display: none !important;
           }
 
           #shader-source {
             max-width: 640px;
+            display: block;
+          }
+
+          .btn {
+            background: none;
+            color: black;
+            border: 1px solid black;
+          }
+
+          .invisible-textarea-trick {
+            position: absolute;
+            left: -9999px;
           }
         </style>
     </head>
     <body>
         <div id="shader-container">
         </div>
-        <div class="shader-source-container">
-          <pre id="shader-source" class="hidden">
-          </pre>
+        <div id="shader-source-container" class="hidden">
+          <div>
+            <textarea id="copy-to-clipboard-area" class="invisible-textarea-trick">
+            </textarea>
+            <button id="copy-to-clipboard-button" class="btn">Copy glsl-bench spec to clipboard</button>
+            <pre id="shader-source">
+            </pre>
+          </div>
         </div>
         <script src="build/bundle.js"></script>
         <script>
