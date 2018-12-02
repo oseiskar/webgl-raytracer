@@ -21,6 +21,11 @@ function GUI() {
     ctrl.onFinishChange(() => anyChange());
     ctrl.listen();
     return ctrl;
+  }
+
+  this.addButton = (name, action) => {
+    options[name] = action;
+    this.dat.add(options, name);
   };
 
   this.onChange = (func) => {

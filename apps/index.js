@@ -97,6 +97,9 @@ function start() {
   gui.add('lightBounces', 4, [1,2,3,4,5]);
   gui.add('tentFilter', true);
   gui.add('showSource', false);
+  gui.addButton('stop', () => {
+    if (bench) bench.stop();
+  });
   gui.onChange(render);
 }
 
