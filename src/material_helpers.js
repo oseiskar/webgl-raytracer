@@ -10,7 +10,8 @@ function convertToGrayscale(property, value) {
 
 function convertToRgb(property, value) {
   const isScalar = {
-    'ior': true
+    'ior': true,
+    'roughness': true
   };
   if (isScalar[property]) {
     return convertToGrayscale(property, value);

@@ -5,9 +5,17 @@
 
 bool sample_specular(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type color, inout rand_state rng) {
     float choice_sample = rand_next_uniform(rng);
+    float roughness = get_roughness(material_id);
+
     if (random_choice(get_reflectivity(material_id, color), choice_sample)) {
         // full reflection
         ray = ray - 2.0*dot(normal, ray)*normal;
+        if (roughness > 0.0) {
+          ray = normalize(ray + rand_next_gauss3(rng)*roughness);
+          // simple way of handling large roughness and rays that "reflect"
+          // to the wrong direction
+          if (dot(ray, normal) < 0.0) ray = ray - 2.0*dot(normal, ray)*normal;
+        }
         return true;
     }
     if (random_choice(get_transparency(material_id, color), choice_sample)) {
@@ -18,6 +26,12 @@ bool sample_specular(int material_id, bool going_out, vec3 normal, inout vec3 ra
           // simplification: "out" of any object is always vacuum
           // and no nested transparent objects are supported
           eta = 1.0 / eta;
+        }
+
+        // simple "roughness" handling
+        if (roughness > 0.0) {
+          ray = normalize(ray + rand_next_gauss3(rng)*roughness);
+          if (dot(ray, normal) < 0.0) ray = ray - 2.0*dot(normal, ray)*normal;
         }
 
         // see https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/refract.xhtml

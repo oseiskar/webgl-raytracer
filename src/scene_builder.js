@@ -90,7 +90,8 @@ function buildIfElseMaterials(uniqueMaterials, objectsById, shaderColorModel) {
     materialEmissions: buildGenericProperty('emission', colorType).materials,
     getterProperties: [
       buildGenericProperty('diffuse', colorType),
-      buildGenericProperty('ior', 'float', defaultValue='1.0')
+      buildGenericProperty('ior', 'float', defaultValue='1.0'),
+      buildGenericProperty('roughness', 'float', defaultValue='0.0')
     ],
     probabilisticProperties: [
       buildProbabilisticProperty('reflectivity'),
@@ -115,7 +116,8 @@ function buildTextureMaterials(uniqueMaterials, objectsById, shaderColorModel) {
     ['diffuse', 0],
     ['reflectivity', 0],
     ['transparency', 0],
-    ['ior', 1]
+    ['ior', 1],
+    ['roughness', 0]
   ].forEach(([property, defaultValue]) => {
     materialTextures[property] = [uniqueMaterials.map(material => {
       if (material.material.hasOwnProperty(property)) {
@@ -158,6 +160,11 @@ function buildTextureMaterials(uniqueMaterials, objectsById, shaderColorModel) {
     getterProperties: [
       {
         name: 'ior',
+        type: 'float',
+        vectorMember: 'x'
+      },
+      {
+        name: 'roughness',
         type: 'float',
         vectorMember: 'x'
       },
