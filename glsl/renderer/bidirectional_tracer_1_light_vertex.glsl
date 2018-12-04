@@ -74,7 +74,7 @@ vec3 render(vec2 xy, vec2 resolution) {
     vec3 result_color = zero_vec3;
 
     bool was_diffuse = false;
-    float last_cosine_weight = 0.0;
+    float last_sampling_prob_density = 0.0;
 
     vec3 light_point, light_normal;
     float light_sample_area_probability;
@@ -98,11 +98,11 @@ vec3 render(vec2 xy, vec2 resolution) {
             int material_id = get_material_id(which_object);
 
             if (get_emission(material_id, color)) {
-                float changeOfVarsTerm = -dot(normal, ray) / (intersection.w*intersection.w);
+                float change_of_variables = -dot(normal, ray) / (intersection.w*intersection.w);
                 float probThis, probOther;
 
                 if (was_diffuse && has_sampler(which_object)) {
-                  probThis = changeOfVarsTerm * last_cosine_weight /  M_PI;
+                  probThis = change_of_variables * last_sampling_prob_density;
                   probOther = light_sample_area_probability;
                 } else {
                     probOther = 0.0;
@@ -118,22 +118,11 @@ vec3 render(vec2 xy, vec2 resolution) {
 
             if (sample_specular(material_id, going_out, normal, ray, color, rng)) {
                 ray_color *= color;
-                if (dot(ray, normal) < 0.0) {
-                    if (going_out) {
-                        // normal = -normal (not used)
-                        inside_object = 0;
-                    }
-                    else inside_object = which_object;
-                }
                 was_diffuse = false;
             } else {
-                // diffuse reflection
-                // sample a new direction
-                ray = get_random_cosine_weighted(normal, rng);
-                last_cosine_weight = dot(normal, ray);
-
-                ray_color *= get_diffuse(material_id) / M_PI;
-                was_diffuse = true;
+                vec3 ray_in = ray;
+                if (!sample_diffuse(material_id, going_out, normal, ray, color, rng)) break;
+                last_sampling_prob_density = diffuse_sampling_pdf(material_id, going_out, normal, ray_in, ray);
 
                 // no lights inside transparent objects supported
                 if (bounce < N_BOUNCES && inside_object == 0)
@@ -143,20 +132,30 @@ vec3 render(vec2 xy, vec2 resolution) {
                     shadow_ray *= 1.0 / shadow_dist;
 
                     if (check_visibility(ray_pos, shadow_ray, normal, light_normal, which_object, light_object)) {
-                        float changeOfVarsTerm = -dot(light_normal, shadow_ray) / (shadow_dist*shadow_dist);
-                        float probOther = changeOfVarsTerm * dot(normal, shadow_ray) / M_PI;
+                        float change_of_variables = -dot(light_normal, shadow_ray) / (shadow_dist*shadow_dist);
+
+                        // = dot(normal, shadow_ray) / M_PI
+                        float prob_sampling = diffuse_sampling_pdf(material_id, going_out, normal, ray_in, shadow_ray);
 
                         // multiple importance sampling probabilities of different strategies
                         float probThis = light_sample_area_probability;
-                        float intensity = dot(normal, shadow_ray) * changeOfVarsTerm / probThis;
+                        float probOther = change_of_variables * prob_sampling;
 
-                        result_color += ray_color * light_emission * intensity * weight2(probThis, probOther);
+                        color_type contribution = diffuse_brdf(material_id, going_out, normal, ray_in, shadow_ray);
+                        color_type f_over_p = contribution * change_of_variables / probThis;
+                        result_color += ray_color * light_emission * f_over_p * weight2(probThis, probOther);
                     }
                 }
 
-                // PI comes from the contribution
-                // f(x) / p(x) = cos(w) / (cos(w) / PI) = PI
-                ray_color *= M_PI;
+                ray_color *= color;
+                was_diffuse = true;
+            }
+            if (dot(ray, normal) < 0.0) {
+                if (going_out) {
+                    // normal = -normal (not used)
+                    inside_object = 0;
+                }
+                else inside_object = which_object;
             }
 
             prev_object = which_object;

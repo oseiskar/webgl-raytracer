@@ -48,20 +48,18 @@ vec3 render(vec2 xy, vec2 resolution) {
                 normal = -normal;
             }
 
-            if (sample_specular(material_id, going_out, normal, ray, color, rng)) {
+            if (sample_ray(material_id, going_out, normal, ray, color, rng)) {
                 ray_color *= color;
-                if (dot(ray, normal) < 0.0) {
-                    if (going_out) {
-                        // normal = -normal (not used)
-                        inside_object = 0;
-                    }
-                    else inside_object = which_object;
-                }
             } else {
-                // diffuse reflection
-                // sample a new direction
-                ray = get_random_cosine_weighted(normal, rng);
-                ray_color *= get_diffuse(material_id);
+                break;
+            }
+
+            if (dot(ray, normal) < 0.0) {
+                if (going_out) {
+                    // normal = -normal (not used)
+                    inside_object = 0;
+                }
+                else inside_object = which_object;
             }
             prev_object = which_object;
         }
