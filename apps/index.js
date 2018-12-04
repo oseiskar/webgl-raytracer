@@ -22,9 +22,15 @@ function render(options) {
   if (!isFullScreen) resolution = options.resolution.split('x').map(x => parseInt(x));
   options.lightSampling = options.renderer.match(/bidirectional/);
 
-  const nRands = parseInt(options.lightBounces) + 5;
 
-  const { source, data } = sceneBuilders[options.scene](options.colorModel);
+  const { source, data } = sceneBuilders[options.scene](options.colorModel)
+    .toggleDataTextures(options.dataTextures)
+    .buildScene();
+
+  const nRands = parseInt(options.lightBounces) + 5;
+  const randSpec = options.dataTextures ?
+    randHelpers.texturesRandUniforms(nRands, nRands) :
+    randHelpers.fixedVecsRandUniforms;
 
   const spec = {
     resolution,
@@ -34,7 +40,10 @@ function render(options) {
       },
       scene: { source },
       camera: { file: 'camera/pinhole.glsl' },
-      rand: { file: 'rand/textures.glsl' },
+      rand: { file: options.dataTextures ?
+        'rand/textures.glsl' :
+        'rand/fixed_vecs.glsl'
+      },
       shading: { file: 'shading/simple_rgb.glsl' },
       parameters: { source: Mustache.render(`
         #define N_BOUNCES {{lightBounces}}
@@ -54,7 +63,7 @@ function render(options) {
       base_image: 'previous_frame',
       frame_number: 'frame_number',
       ...data,
-      ...randHelpers.texturesRandUniforms(nRands, nRands)
+      ...randSpec
     }
   };
 
@@ -95,6 +104,7 @@ function start() {
     'bidirectional': 'bidirectional_tracer_1_light_vertex'
   });
   gui.add('colorModel', 'rgb', ['rgb', 'grayscale'])
+  gui.add('dataTextures', true);
   gui.add('lightBounces', 4, [1,2,3,4,5]);
   gui.add('tentFilter', true);
   gui.add('showSource', false);

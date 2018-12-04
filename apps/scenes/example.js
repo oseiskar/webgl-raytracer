@@ -32,7 +32,7 @@ const materials = {
   }
 };
 
-function buildScene(shaderColorType = 'rgb') {
+function getBuilder(shaderColorType = 'rgb') {
   const m = MaterialHelpers.autoConvert(materials, shaderColorType);
 
   return new SceneBuilder()
@@ -52,8 +52,7 @@ function buildScene(shaderColorType = 'rgb') {
       new BoxInterior(ROOM_W*0.5, ROOM_W*0.5, ROOM_H*0.5),
       [0.0, 0.0, ROOM_H*0.5],
       m.walls
-    )
-    .buildScene();
+    );
 }
 
-module.exports = buildScene;
+module.exports = getBuilder;

@@ -28,7 +28,7 @@ const materials = {
 
 function deg2rad(x) { return x / 180.0 * Math.PI; }
 
-function buildScene(shaderColorType = 'rgb') {
+function getBuilder(shaderColorType = 'rgb') {
   const m = MaterialHelpers.autoConvert(materials, shaderColorType);
 
   return new SceneBuilder()
@@ -52,8 +52,7 @@ function buildScene(shaderColorType = 'rgb') {
     .addObject(new Box(165/2, 165/2, 165/2),
         m4.rotateZ(m4.translation([351, 186, 165/2]), deg2rad(-18)),
         m.others) // "tall block", about
-    .addObject(new Box(130/2, 130/2, 0.1 /* artificial thickness */), [278, 279, 548], m.light)
-    .buildScene();
+    .addObject(new Box(130/2, 130/2, 0.1 /* artificial thickness */), [278, 279, 548], m.light);
 }
 
-module.exports = buildScene;
+module.exports = getBuilder;

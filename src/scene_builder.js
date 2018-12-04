@@ -196,6 +196,12 @@ function SceneBuilder() {
     return this;
   };
 
+  this.toggleDataTextures = (enabled) => {
+    enableMaterialTextures = !!enabled;
+    enableGeometryTextures = !!enabled;
+    return this;
+  };
+
   this.setFixedPinholeCamera = (parameters) => {
     function transformParameters() {
       const defaults = {
