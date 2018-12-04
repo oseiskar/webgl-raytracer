@@ -2,6 +2,7 @@
 #include "scene"
 #include "rand"
 #include "camera"
+#include "shading"
 #include "util/random_helpers.glsl"
 
 #ifndef N_BOUNCES
@@ -42,39 +43,19 @@ vec3 render(vec2 xy, vec2 resolution) {
                 result_color += ray_color * color;
             }
 
-            if (which_object == inside_object) {
+            bool going_out = which_object == inside_object;
+            if (going_out) {
                 normal = -normal;
             }
 
-            if (random_choice(get_reflectivity(material_id, color), choice_sample)) {
-                // full reflection
+            if (sample_specular(material_id, going_out, normal, ray, color, rng)) {
                 ray_color *= color;
-                ray = ray - 2.0*dot(normal, ray)*normal;
-            } else if (random_choice(get_transparency(material_id, color), choice_sample)) {
-                ray_color *= color;
-
-                // refraction
-                float eta = 1.0 / get_ior(material_id);
-
-                int next_object = which_object;
-
-                // out
-                if (inside_object == which_object) {
-                    next_object = 0;
-                    eta = 1.0 / eta;
-                }
-
-                // see https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/refract.xhtml
-                // Snell's law for refraction
-                float d = dot(normal, ray);
-                float k = 1.0 - eta*eta * (1.0 - d*d);
-                if (k < 0.0) {
-                    // total reflection
-                    ray = ray - 2.0*d*normal;
-                } else {
-                    inside_object = next_object;
-                    ray = eta * ray - (eta * d + sqrt(k)) * normal;
-                    normal = -normal;
+                if (dot(ray, normal) < 0.0) {
+                    if (going_out) {
+                        // normal = -normal (not used)
+                        inside_object = 0;
+                    }
+                    else inside_object = which_object;
                 }
             } else {
                 // diffuse reflection

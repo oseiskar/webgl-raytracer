@@ -35,6 +35,7 @@ function render(options) {
       scene: { source },
       camera: { file: 'camera/pinhole.glsl' },
       rand: { file: 'rand/textures.glsl' },
+      shading: { file: 'shading/simple_rgb.glsl' },
       parameters: { source: Mustache.render(`
         #define N_BOUNCES {{lightBounces}}
         {{^tentFilter}}

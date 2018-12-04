@@ -2,6 +2,7 @@
 #include "scene"
 #include "rand"
 #include "camera"
+#include "shading"
 #include "util/random_helpers.glsl"
 
 // tracer parameters
@@ -44,6 +45,19 @@ float weight1(float p1, float p2) {
 #ifndef N_OBJECTS
 #define N_OBJECTS 9999
 #endif
+
+bool check_visibility(vec3 pos, vec3 shadow_ray, vec3 normal, vec3 light_normal, int which_object, int light_object) {
+    vec4 shadow_isec;
+    if (dot(shadow_ray, normal) > 0.0 &&
+        dot(shadow_ray, light_normal) < 0.0 &&
+        which_object != light_object)
+    {
+        vec4 shadow_isec;
+        int shadow_object = find_intersection(pos, shadow_ray, which_object, 0, shadow_isec);
+        return shadow_object == 0 || shadow_object == light_object;
+    }
+    return false;
+}
 
 vec3 render(vec2 xy, vec2 resolution) {
     rand_state rng;
@@ -97,60 +111,21 @@ vec3 render(vec2 xy, vec2 resolution) {
                 result_color += ray_color * color * weight1(probThis, probOther);
             }
 
-            // visibility test
-            vec4 shadow_isec;
-            vec3 shadow_ray = light_point - ray_pos;
-            float shadow_dist = length(shadow_ray);
-            shadow_ray = normalize(shadow_ray);
-
-            int shadow_object = which_object;
-            if (which_object != light_object &&
-                inside_object == 0 && // no lights inside transparent objects supported
-                dot(shadow_ray, normal) > 0.0 &&
-                dot(shadow_ray, light_normal) < 0.0) {
-                shadow_object = find_intersection(ray_pos, shadow_ray, which_object, inside_object, shadow_isec);
-            }
-            else {
-              shadow_isec.w = -1.0;
-              shadow_object = N_OBJECTS;
-            }
-
-            if (which_object == inside_object) {
+            bool going_out = which_object == inside_object;
+            if (going_out) {
                 normal = -normal;
             }
 
-            if (random_choice(get_reflectivity(material_id, color), choice_sample)) {
-                // full reflection
-                ray = ray - 2.0*dot(normal, ray)*normal;
+            if (sample_specular(material_id, going_out, normal, ray, color, rng)) {
                 ray_color *= color;
-                was_diffuse = false;
-            } else if (random_choice(get_transparency(material_id, color), choice_sample)) {
-                ray_color *= color;
-
-                // refraction
-                float eta = 1.0 / get_ior(material_id);
-
-                was_diffuse = false;
-                int next_object = which_object;
-
-                // out
-                if (inside_object == which_object) {
-                    next_object = 0;
-                    eta = 1.0 / eta;
+                if (dot(ray, normal) < 0.0) {
+                    if (going_out) {
+                        // normal = -normal (not used)
+                        inside_object = 0;
+                    }
+                    else inside_object = which_object;
                 }
-
-                // see https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/refract.xhtml
-                // Snell's law for refraction
-                float d = dot(normal, ray);
-                float k = 1.0 - eta*eta * (1.0 - d*d);
-                if (k < 0.0) {
-                    // total reflection
-                    ray = ray - 2.0*d*normal;
-                } else {
-                    inside_object = next_object;
-                    ray = eta * ray - (eta * d + sqrt(k)) * normal;
-                    normal = -normal;
-                }
+                was_diffuse = false;
             } else {
                 // diffuse reflection
                 // sample a new direction
@@ -159,29 +134,31 @@ vec3 render(vec2 xy, vec2 resolution) {
 
                 ray_color *= get_diffuse(material_id) / M_PI;
                 was_diffuse = true;
-            }
 
-            if (bounce < N_BOUNCES && was_diffuse && (
-                  shadow_object == 0 ||
-                  shadow_object == light_object)) {
+                // no lights inside transparent objects supported
+                if (bounce < N_BOUNCES && inside_object == 0)
+                {
+                    vec3 shadow_ray = light_point - ray_pos;
+                    float shadow_dist = length(shadow_ray);
+                    shadow_ray *= 1.0 / shadow_dist;
 
-                // not obstructed
+                    if (check_visibility(ray_pos, shadow_ray, normal, light_normal, which_object, light_object)) {
+                        float changeOfVarsTerm = -dot(light_normal, shadow_ray) / (shadow_dist*shadow_dist);
+                        float probOther = changeOfVarsTerm * dot(normal, shadow_ray) / M_PI;
 
-                float changeOfVarsTerm = -dot(shadow_isec.xyz, shadow_ray) / (shadow_dist*shadow_dist);
-                float probOther = changeOfVarsTerm * dot(normal, shadow_ray) / M_PI;
+                        // multiple importance sampling probabilities of different strategies
+                        float probThis = light_sample_area_probability;
+                        float intensity = dot(normal, shadow_ray) * changeOfVarsTerm / probThis;
 
-                // multiple importance sampling probabilities of different strategies
-                float probThis = light_sample_area_probability;
-                float intensity = dot(normal, shadow_ray) * changeOfVarsTerm / probThis;
+                        result_color += ray_color * light_emission * intensity * weight2(probThis, probOther);
+                    }
+                }
 
-                result_color += ray_color * light_emission * intensity * weight2(probThis, probOther);
-            }
-
-            if (was_diffuse) {
                 // PI comes from the contribution
                 // f(x) / p(x) = cos(w) / (cos(w) / PI) = PI
                 ray_color *= M_PI;
             }
+
             prev_object = which_object;
         }
     }
