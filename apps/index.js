@@ -27,7 +27,7 @@ function render(options) {
     .toggleDataTextures(options.dataTextures)
     .buildScene();
 
-  const nRands = parseInt(options.lightBounces) + 5;
+  const nRands = parseInt(options.lightBounces)*2 + 5;
   const randSpec = options.dataTextures ?
     randHelpers.texturesRandUniforms(nRands, nRands) :
     randHelpers.fixedVecsRandUniforms;
@@ -45,8 +45,7 @@ function render(options) {
         'rand/fixed_vecs.glsl'
       },
       shading: {
-        //file: 'shading/simple_rgb.glsl'
-        file: 'shading/cook_torrence.glsl'
+        file: `shading/${options.scatteringModel}.glsl`
       },
       parameters: { source: Mustache.render(`
         #define N_BOUNCES {{lightBounces}}
@@ -106,7 +105,11 @@ function start() {
     'path tracer': 'pathtracer',
     'bidirectional': 'bidirectional_tracer_1_light_vertex'
   });
-  gui.add('colorModel', 'rgb', ['rgb', 'grayscale'])
+  gui.add('colorModel', 'rgb', ['rgb', 'grayscale']);
+  gui.add('scatteringModel', 'ggx', {
+    'lambert': 'simple_rgb',
+    'ggx': 'cook_torrence'
+  });
   gui.add('dataTextures', true);
   gui.add('lightBounces', 4, [1,2,3,4,5]);
   gui.add('tentFilter', true);

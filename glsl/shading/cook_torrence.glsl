@@ -70,27 +70,41 @@ vec3 sample_ggx(vec3 normal, float alpha, inout rand_state rng) {
     return false;
 }*/
 
-bool ggx_sample_specular(float alpha, bool going_out, vec3 normal, inout vec3 ray, out color_type color, inout rand_state rng) {
-    // microfacet normal
-    vec3 m = sample_ggx(normal, alpha, rng);
-    vec3 i = -ray;
-    vec3 o = ray - 2.0*dot(m, ray)*m;
+color_type get_color(int material_id) {
+    color_type reflection_color;
+    float r = get_reflectivity(material_id, reflection_color);
+    if (r <= 0.0) reflection_color *= 0.0; // TODO: why?
+    const float mystery_multiplier = 2.0; // ????
+    return (get_diffuse(material_id) * (1.0 - r) + r * reflection_color) * mystery_multiplier;
+}
+
+color_type ggx_color(int material_id, bool going_out, vec3 normal, vec3 i, vec3 o, vec3 m) {
+    float alpha = get_roughness(material_id);
+    float G = ggx_G1(i, m, normal, alpha) * ggx_G1(o, m, normal, alpha);
 
     // f / p
-    float weight = dot(i, m) * ggx_G1(i, m, normal, alpha) * ggx_G1(o, m, normal, alpha) / (dot(i, normal) * dot(m, normal));
-    color = vec3(1.0, 1.0, 1.0);
-    //color = fresnel_schlick_term(-dot(ray, m), color);
-    color *= weight;
+    float weight = dot(i, m) * G / (dot(i, normal) * dot(m, normal));
 
+    float cosT = max(min(dot(o, m), 1.0), 0.0);
+    color_type color = get_color(material_id);
+    color = fresnel_schlick_term(cosT, color);
+    return color * weight;
+}
+
+bool ggx_sample_specular(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type color, inout rand_state rng) {
+    float alpha = get_roughness(material_id);
+
+    // microfacet normal
+    vec3 m = sample_ggx(normal, alpha, rng);
+    vec3 o = ray - 2.0*dot(m, ray)*m;
+
+    color = ggx_color(material_id, going_out, normal, -ray, o, m);
     ray = o;
     return true;
 }
 
-bool sample_specular(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type color, inout rand_state rng) {
-    return false;
-}
-
-float ggx_sampling_pdf(float alpha, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
+float ggx_sampling_pdf(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
+    float alpha = get_roughness(material_id);
     vec3 m = normalize(-ray_in + ray_out);
     float d = ggx_D(normal, m, alpha);
 
@@ -98,88 +112,28 @@ float ggx_sampling_pdf(float alpha, bool going_out, vec3 normal, vec3 ray_in, ve
     return d * dot(m, normal) * ch_vars;
 }
 
-color_type ggx_specular_brdf(float alpha, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
+color_type ggx_specular_brdf(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
     vec3 m = normalize(-ray_in + ray_out);
-      color_type color = vec3(1.0, 1.0, 1.0);
-
-    float d = ggx_D(normal, m, alpha);
-    float ch_vars = 1.0 / (4.0 * dot(ray_out, m));
-    float weight = dot(-ray_in, m) * ggx_G1(-ray_in, m, normal, alpha) * ggx_G1(ray_out, m, normal, alpha) / (dot(-ray_in, normal) * dot(m, normal));
-
-    return color * d * dot(m, normal) * ch_vars * weight;
+    color_type color = ggx_color(material_id, going_out, normal, -ray_in, ray_out, m);
+    return ggx_sampling_pdf(material_id, going_out, normal, ray_in, ray_out) * color;
 }
-
-float lambert_sampling_pdf(vec3 normal, vec3 ray_out) {
-    return dot(normal, ray_out) / M_PI;
-}
-
-color_type lambert_brdf(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
-    return get_diffuse(material_id) * lambert_sampling_pdf(normal, ray_out);
-}
-
-// "diffuse"
 
 float diffuse_sampling_pdf(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
-    color_type dummy;
-    float alpha = get_roughness(material_id);
-    float refl = get_reflectivity(material_id, dummy);
-    return refl * ggx_sampling_pdf(alpha, going_out, normal, ray_in, ray_out)
-     + (1.0 - refl) * lambert_sampling_pdf(normal, ray_out);
-    // + (1.0 - refl) * ggx_sampling_pdf(1.0, going_out, normal, ray_in, ray_out);
+    return ggx_sampling_pdf(material_id, going_out, normal, ray_in, ray_out);
 }
 
 color_type diffuse_brdf(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
-    color_type col;
-    float alpha = get_roughness(material_id);
-    float refl = get_reflectivity(material_id, col);
-    if (refl <= 0.0) {
-        col = vec3(0,0,0); // TODO: why required?
-    }
-    return refl * ggx_specular_brdf(alpha, going_out, normal, ray_in, ray_out) * col +
-      (1.0 - refl) * lambert_brdf(material_id, going_out, normal, ray_in, ray_out);
-      //(1.0 - refl) * ggx_specular_brdf(1.0, going_out, normal, ray_in, ray_out) * get_diffuse(material_id);
-}
-
-
-bool sample_diffuse_lambert(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type color, inout rand_state rng) {
-    color = get_diffuse(material_id);
-    ray = get_random_cosine_weighted(normal, rng);
-    return true;
+    return ggx_specular_brdf(material_id, going_out, normal, ray_in, ray_out);
 }
 
 bool sample_ray(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type color, inout rand_state rng) {
-
-    color_type col;
-    float choice_sample = rand_next_uniform(rng);
-    float refl = get_reflectivity(material_id, col);
-    float alpha = get_roughness(material_id);
-    if (refl <= 0.0) col = vec3(0,0,0); // TODO
-    if (random_choice(refl, choice_sample)) {
-        color_type col2;
-        ggx_sample_specular(alpha, going_out, normal, ray, col2, rng);
-
-        //vec3 ray_in = ray;
-        //ggx_sample_specular(material_id, going_out, normal, ray, col2, rng);
-        //float samp = ggx_sampling_pdf(material_id, going_out, normal, ray_in, ray);
-        //color_type brdf = ggx_specular_brdf(material_id, going_out, normal, ray_in, ray);
-        //float weight = min(1.0 / samp, MAX_WEIGHT);
-        //if (samp <= 0.0) weight = 0.0;
-        //color = brdf * weight * col;
-        color = col * col2;
-
-        return true;
-    }
-    else {
-      /*color_type col2;
-      ggx_sample_specular(1.0, going_out, normal, ray, col2, rng);
-      color = col2 * get_diffuse(material_id);
-      return true;*/
-
-      return sample_diffuse_lambert(material_id, going_out, normal, ray, color, rng);
-    }
+    return ggx_sample_specular(material_id, going_out, normal, ray, color, rng);
 }
 
 bool sample_diffuse(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type color, inout rand_state rng) {
-    //return sample_diffuse_lambert(material_id, going_out, normal, ray, color, rng);
     return sample_ray(material_id, going_out, normal, ray, color, rng);
+}
+
+bool sample_specular(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type color, inout rand_state rng) {
+    return false;
 }
