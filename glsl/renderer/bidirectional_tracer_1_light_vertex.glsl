@@ -73,8 +73,7 @@ vec3 render(vec2 xy, vec2 resolution) {
     int inside_object = 0;
     vec3 result_color = zero_vec3;
 
-    bool was_diffuse = false;
-    float last_sampling_prob_density = 0.0;
+    float last_sampling_prob = 0.0;
 
     vec3 light_point, light_normal;
     float light_sample_area_probability;
@@ -101,8 +100,8 @@ vec3 render(vec2 xy, vec2 resolution) {
                 float change_of_variables = -dot(normal, ray) / (intersection.w*intersection.w);
                 float probThis, probOther;
 
-                if (was_diffuse && has_sampler(which_object)) {
-                  probThis = change_of_variables * last_sampling_prob_density;
+                if (last_sampling_prob > 0.0 && has_sampler(which_object)) {
+                  probThis = change_of_variables * last_sampling_prob;
                   probOther = light_sample_area_probability;
                 } else {
                     probOther = 0.0;
@@ -116,40 +115,33 @@ vec3 render(vec2 xy, vec2 resolution) {
                 normal = -normal;
             }
 
-            was_diffuse = false;
-            if (sample_specular(material_id, going_out, normal, ray, color, rng)) {
-                ray_color *= color;
-            } else {
-                vec3 ray_in = ray;
-                if (!sample_diffuse(material_id, going_out, normal, ray, color, rng)) break;
-                last_sampling_prob_density = diffuse_sampling_pdf(material_id, going_out, normal, ray_in, ray);
-
+            vec3 ray_in = ray;
+            last_sampling_prob = sample_ray_and_prob(material_id, going_out, normal, ray, color, rng);
+            if (last_sampling_prob > 0.0 && bounce < N_BOUNCES && inside_object == 0) {
                 // no lights inside transparent objects supported
-                if (bounce < N_BOUNCES && inside_object == 0)
-                {
-                    vec3 shadow_ray = light_point - ray_pos;
-                    float shadow_dist = length(shadow_ray);
-                    shadow_ray *= 1.0 / shadow_dist;
+                vec3 shadow_ray = light_point - ray_pos;
+                float shadow_dist = length(shadow_ray);
+                shadow_ray *= 1.0 / shadow_dist;
 
-                    if (check_visibility(ray_pos, shadow_ray, normal, light_normal, which_object, light_object)) {
-                        float change_of_variables = -dot(light_normal, shadow_ray) / (shadow_dist*shadow_dist);
+                if (check_visibility(ray_pos, shadow_ray, normal, light_normal, which_object, light_object)) {
+                    float change_of_variables = -dot(light_normal, shadow_ray) / (shadow_dist*shadow_dist);
 
-                        // = dot(normal, shadow_ray) / M_PI
-                        float prob_sampling = diffuse_sampling_pdf(material_id, going_out, normal, ray_in, shadow_ray);
+                    // = dot(normal, shadow_ray) / M_PI
+                    float prob_sampling = sampling_pdf(material_id, going_out, normal, ray_in, shadow_ray);
 
-                        // multiple importance sampling probabilities of different strategies
-                        float probThis = light_sample_area_probability;
-                        float probOther = change_of_variables * prob_sampling;
+                    // multiple importance sampling probabilities of different strategies
+                    float probThis = light_sample_area_probability;
+                    float probOther = change_of_variables * prob_sampling;
 
-                        color_type contribution = diffuse_brdf(material_id, going_out, normal, ray_in, shadow_ray);
-                        color_type f_over_p = contribution * change_of_variables / probThis;
-                        result_color += ray_color * light_emission * f_over_p * weight2(probThis, probOther);
-                    }
-                    was_diffuse = true;
+                    color_type contribution = brdf(material_id, going_out, normal, ray_in, shadow_ray);
+                    color_type f_over_p = contribution * change_of_variables / probThis;
+                    result_color += ray_color * light_emission * f_over_p * weight2(probThis, probOther);
                 }
-
-                ray_color *= color;
+            } else {
+                last_sampling_prob = 0.0;
             }
+            ray_color *= color;
+
             if (dot(ray, normal) < 0.0) {
                 if (going_out) {
                     // normal = -normal (not used)
