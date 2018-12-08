@@ -133,7 +133,7 @@ vec3 render(vec2 xy, vec2 resolution) {
                     float probThis = light_sample_area_probability;
                     float probOther = change_of_variables * prob_sampling;
 
-                    color_type contribution = brdf(material_id, going_out, normal, ray_in, shadow_ray);
+                    color_type contribution = brdf_cos_weighted(material_id, going_out, normal, ray_in, shadow_ray);
                     color_type f_over_p = contribution * change_of_variables / probThis;
                     result_color += ray_color * light_emission * f_over_p * weight2(probThis, probOther);
                 }

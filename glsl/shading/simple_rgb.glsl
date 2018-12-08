@@ -74,7 +74,7 @@ float sample_diffuse_and_prob(int material_id, bool going_out, vec3 normal, inou
     return sampling_pdf(material_id, going_out, normal, ray_in, ray);
 }
 
-color_type brdf(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
+color_type brdf_cos_weighted(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
     return get_diffuse(material_id) * sampling_pdf(material_id, going_out, normal, ray_in, ray_out);
 }
 

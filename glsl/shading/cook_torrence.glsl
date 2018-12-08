@@ -46,32 +46,48 @@ color_type get_color(int material_id) {
     return (get_diffuse(material_id) * (1.0 - r) + reflection_color) * mystery_multiplier;
 }
 
-color_type ggx_color(int material_id, bool going_out, vec3 normal, vec3 i, vec3 o, vec3 m) {
-    float alpha = get_roughness(material_id);
+float ggx_sample_weight(float alpha, vec3 normal, vec3 i, vec3 o, vec3 m) {
     float G = ggx_G1(i, m, normal, alpha) * ggx_G1(o, m, normal, alpha);
 
-    // f / p
-    float weight = dot(i, m) * G / (dot(i, normal) * dot(m, normal));
-
-    float cosT = max(min(dot(o, m), 1.0), 0.0);
-    color_type color = get_color(material_id);
-    color = fresnel_schlick_term(cosT, color);
-    return color * weight;
+    // cos(theta) * bdrf / Fresnel / sampling_pdf
+    // cos(theta) * D * G  / (4.0 * |i.n| * |o.n|) / (D * |m.n| / (4.0 * |o.m|))
+    // cos(theta) * G * |o.m| / (|i.n| * |o.n| * |m.n|) // cos(theta) = |o.n|
+    // G * |o.m| / (|i.n| * |m.n|)   // |o.m| = |i.m| (half vector)
+    // G * |i.m| / (|i.n| * |i.n|)
+    return dot(i, m) * G  / (dot(i, normal) * dot(m, normal));
+    // f / p without Fresnel term
 }
 
 float sampling_pdf(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
     float alpha = get_roughness(material_id);
     vec3 m = normalize(-ray_in + ray_out);
-    float d = ggx_D(normal, m, alpha);
+    float D = ggx_D(normal, m, alpha);
 
     float ch_vars = 1.0 / (4.0 * dot(ray_out, m));
-    return d * dot(m, normal) * ch_vars;
+    return D * dot(m, normal) * ch_vars;
 }
 
-color_type brdf(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
+color_type brdf_cos_weighted(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
     vec3 m = normalize(-ray_in + ray_out);
-    color_type color = ggx_color(material_id, going_out, normal, -ray_in, ray_out, m);
-    return sampling_pdf(material_id, going_out, normal, ray_in, ray_out) * color;
+    float alpha = get_roughness(material_id);
+
+    color_type color = get_color(material_id);
+    float cosT = max(min(dot(ray_out, m), 1.0), 0.0);
+
+    //color_type weight = ggx_sample_weight(alpha, normal, -ray_in, ray_out, m) *
+    //  fresnel_schlick_term(cosT, color);
+    //return sampling_pdf(material_id, going_out, normal, ray_in, ray_out) * weight;
+
+    color_type F = fresnel_schlick_term(cosT, color);
+    float G = ggx_G1(-ray_in, m, normal, alpha) * ggx_G1(ray_out, m, normal, alpha);
+    float D = ggx_D(normal, m, alpha);
+    // ch_vars = 1 / (4 * |o.m|)
+    // pdf = D * |m.n|* ch_vars
+    // F * w * pdf
+    // F * |o.n| * G / (|i.n| * |m.n|) * D * |m.n| * ch_vars
+    // F * D * G * |o.n| / |i.n| * ch_vars
+    // F * D * G * |o.n| / (4 * |i.n| * |o.n|)
+    return F * D * G / (4.0 * dot(ray_out, m) * dot(-ray_in, normal)) * dot(ray_out, normal);
 }
 
 bool sample_ray(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
@@ -81,7 +97,11 @@ bool sample_ray(int material_id, bool going_out, vec3 normal, inout vec3 ray, ou
     vec3 m = sample_ggx(normal, alpha, rng);
     vec3 o = ray - 2.0*dot(m, ray)*m;
 
-    weight = ggx_color(material_id, going_out, normal, -ray, o, m);
+    color_type color = get_color(material_id);
+    float cosT = max(min(dot(o, m), 1.0), 0.0);
+    color = fresnel_schlick_term(cosT, color);
+
+    weight = color * ggx_sample_weight(alpha, normal, -ray, o, m);
     ray = o;
     return true;
 }
