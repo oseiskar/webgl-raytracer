@@ -116,9 +116,9 @@ vec3 render(vec2 xy, vec2 resolution) {
                 normal = -normal;
             }
 
+            was_diffuse = false;
             if (sample_specular(material_id, going_out, normal, ray, color, rng)) {
                 ray_color *= color;
-                was_diffuse = false;
             } else {
                 vec3 ray_in = ray;
                 if (!sample_diffuse(material_id, going_out, normal, ray, color, rng)) break;
@@ -145,10 +145,10 @@ vec3 render(vec2 xy, vec2 resolution) {
                         color_type f_over_p = contribution * change_of_variables / probThis;
                         result_color += ray_color * light_emission * f_over_p * weight2(probThis, probOther);
                     }
+                    was_diffuse = true;
                 }
 
                 ray_color *= color;
-                was_diffuse = true;
             }
             if (dot(ray, normal) < 0.0) {
                 if (going_out) {

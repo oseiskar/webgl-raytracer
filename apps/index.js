@@ -44,7 +44,10 @@ function render(options) {
         'rand/textures.glsl' :
         'rand/fixed_vecs.glsl'
       },
-      shading: { file: 'shading/simple_rgb.glsl' },
+      shading: {
+        //file: 'shading/simple_rgb.glsl'
+        file: 'shading/cook_torrence.glsl'
+      },
       parameters: { source: Mustache.render(`
         #define N_BOUNCES {{lightBounces}}
         {{^tentFilter}}
@@ -96,7 +99,7 @@ function start() {
     '1024x786',
     'fullscreen'
   ]);
-  gui.add('scene', 'Cornell Box', Object.keys(sceneBuilders));
+  gui.add('scene', 'Example', Object.keys(sceneBuilders));
   gui.add('renderer', 'bidirectional', {
     'flat': 'random_flat_color_shader',
     'lambert': 'direct_light_diffuse_shader',
