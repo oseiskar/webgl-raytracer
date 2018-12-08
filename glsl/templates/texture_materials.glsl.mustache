@@ -1,4 +1,5 @@
 #define color_type {{colorType}}
+#define color2prob(c) {{{colorToProb}}}
 
 uniform sampler2D material_id_texture;
 uniform sampler2D emission_texture;
@@ -10,23 +11,12 @@ int get_material_id(int which_object) {
 bool get_emission(int material_id, out color_type emission) {
   vec4 val = texture2D(emission_texture, vec2(float(material_id)/float({{nMaterials}}-1), 0.5));
   emission = val.{{vectorMember}};
-  return (val.x + val.y + val.z) > 0.0;
+  return (val.x + val.y + val.z) > 0.0; // works with both RGB and grayscale
 }
 
-{{#getterProperties}}
+{{#properties}}
 uniform sampler2D {{name}}_texture;
 {{type}} get_{{name}}(int material_id) {
   return texture2D({{name}}_texture, vec2(float(material_id)/float({{nMaterials}}-1), 0.5)).{{vectorMember}};
 }
-{{/getterProperties}}
-
-{{#probabilisticProperties}}
-uniform sampler2D {{name}}_texture;
-float get_{{name}}(int material_id, out color_type color) {
-  vec4 val = texture2D({{name}}_texture, vec2(float(material_id)/float({{nMaterials}}-1), 0.5));
-  {{colorType}} col = val.{{vectorMember}};
-  float prob = (val.x + val.y + val.z) / 3.0;
-  color = col / prob;
-  return prob;
-}
-{{/probabilisticProperties}}
+{{/properties}}

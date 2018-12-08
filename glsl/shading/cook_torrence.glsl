@@ -39,11 +39,11 @@ vec3 sample_ggx(vec3 normal, float alpha, inout rand_state rng) {
 }
 
 color_type get_color(int material_id) {
-    color_type reflection_color;
-    float r = get_reflectivity(material_id, reflection_color);
-    if (r <= 0.0) reflection_color *= 0.0; // TODO: why?
+    color_type reflection_color = get_reflectivity(material_id);
+    float r = color2prob(reflection_color);
+
     const float mystery_multiplier = 2.0; // ????
-    return (get_diffuse(material_id) * (1.0 - r) + r * reflection_color) * mystery_multiplier;
+    return (get_diffuse(material_id) * (1.0 - r) + reflection_color) * mystery_multiplier;
 }
 
 color_type ggx_color(int material_id, bool going_out, vec3 normal, vec3 i, vec3 o, vec3 m) {
@@ -57,18 +57,6 @@ color_type ggx_color(int material_id, bool going_out, vec3 normal, vec3 i, vec3 
     color_type color = get_color(material_id);
     color = fresnel_schlick_term(cosT, color);
     return color * weight;
-}
-
-bool ggx_sample_specular(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type color, inout rand_state rng) {
-    float alpha = get_roughness(material_id);
-
-    // microfacet normal
-    vec3 m = sample_ggx(normal, alpha, rng);
-    vec3 o = ray - 2.0*dot(m, ray)*m;
-
-    color = ggx_color(material_id, going_out, normal, -ray, o, m);
-    ray = o;
-    return true;
 }
 
 float sampling_pdf(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
@@ -86,12 +74,20 @@ color_type brdf(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 
     return sampling_pdf(material_id, going_out, normal, ray_in, ray_out) * color;
 }
 
-float sample_ray_and_prob(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type color, inout rand_state rng) {
-    vec3 ray_in = ray;
-    ggx_sample_specular(material_id, going_out, normal, ray, color, rng);
-    return sampling_pdf(material_id, going_out, normal, ray_in, ray);
+bool sample_ray(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
+    float alpha = get_roughness(material_id);
+
+    // microfacet normal
+    vec3 m = sample_ggx(normal, alpha, rng);
+    vec3 o = ray - 2.0*dot(m, ray)*m;
+
+    weight = ggx_color(material_id, going_out, normal, -ray, o, m);
+    ray = o;
+    return true;
 }
 
-bool sample_ray(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type color, inout rand_state rng) {
-    return ggx_sample_specular(material_id, going_out, normal, ray, color, rng);
+float sample_ray_and_prob(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
+    vec3 ray_in = ray;
+    sample_ray(material_id, going_out, normal, ray, weight, rng);
+    return sampling_pdf(material_id, going_out, normal, ray_in, ray);
 }

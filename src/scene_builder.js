@@ -53,50 +53,20 @@ function buildIfElseMaterials(uniqueMaterials, objectsById, shaderColorModel) {
     }
   }
 
-  function buildProbabilisticProperty(name) {
-    function toProbAndValue(value) {
-      if (shaderColorModel === 'rgb') {
-        const prob = (value[0]+value[1]+value[2])/3;
-        const col = value.map(x => x/prob);
-
-        return {
-          probability: `float(${prob})`,
-          value: toVec3(col)
-        };
-      } else if (shaderColorModel === 'grayscale') {
-        return {
-          probability: `float(${value})`,
-          value: '1.0'
-        };
-      } else throw new Error(`invalid color model ${shaderColorModel}`);
-    }
-
-    return {
-      name,
-      type: 'float',
-      materials: addFirstFlag(uniqueMaterials
-        .filter(mat => mat.material.hasOwnProperty(name))
-        .map(mat => ({
-          objects: mat.objects.map(obj => ({ id: obj.id })),
-          ...toProbAndValue(mat.material[name])
-        })))
-    }
-  }
-
   const colorType = shaderColorModel === 'rgb' ? 'vec3' : 'float';
+  const colorToProb = colorType === 'vec3' ? '((c).x + (c).y + (c).z) / 3.0' : 'c';
 
   return Mustache.render(tracerData.templates['if_else_materials.glsl.mustache'], {
     colorType,
+    colorToProb,
     materialEmissions: buildGenericProperty('emission', colorType).materials,
-    getterProperties: [
+    properties: [
       buildGenericProperty('diffuse', colorType),
       buildGenericProperty('ior', 'float', defaultValue='1.0'),
-      buildGenericProperty('roughness', 'float', defaultValue='1.0') // for ggx
+      buildGenericProperty('roughness', 'float', defaultValue='1.0'), // for ggx
+      buildGenericProperty('reflectivity', colorType),
+      buildGenericProperty('transparency', colorType)
     ],
-    probabilisticProperties: [
-      buildProbabilisticProperty('reflectivity'),
-      buildProbabilisticProperty('transparency')
-    ]
   });
 }
 
@@ -143,21 +113,15 @@ function buildTextureMaterials(uniqueMaterials, objectsById, shaderColorModel) {
 
   const colorType = shaderColorModel === 'rgb' ? 'vec3' : 'float';
   const vectorMember = colorType === 'vec3' ? 'xyz' : 'x';
+  const colorToProb = colorType === 'vec3' ? '((c).x + (c).y + (c).z) / 3.0' : 'c';
 
   const code = Mustache.render(tracerData.templates['texture_materials.glsl.mustache'], {
     colorType,
     maxObjectId,
     nMaterials,
     vectorMember,
-    probabilisticProperties: [
-      'reflectivity',
-      'transparency'
-    ].map(name => ({
-      name,
-      type: colorType,
-      vectorMember
-    })),
-    getterProperties: [
+    colorToProb,
+    properties: [
       {
         name: 'ior',
         type: 'float',
@@ -170,6 +134,16 @@ function buildTextureMaterials(uniqueMaterials, objectsById, shaderColorModel) {
       },
       {
         name: 'diffuse',
+        type: colorType,
+        vectorMember
+      },
+      {
+        name: 'reflectivity',
+        type: colorType,
+        vectorMember
+      },
+      {
+        name: 'transparency',
         type: colorType,
         vectorMember
       }
