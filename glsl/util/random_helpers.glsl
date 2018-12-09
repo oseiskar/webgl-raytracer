@@ -20,3 +20,9 @@ bool random_choice(float prob, inout float x) {
       return false;
     }
 }
+
+// bias-inducing workaround for ill-behaved sampling
+// drop all sufficiently nasty samples
+#ifndef MAX_SAMPLE_WEIGHT
+#define MAX_SAMPLE_WEIGHT 100.0
+#endif

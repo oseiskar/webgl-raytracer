@@ -42,10 +42,6 @@ float weight1(float p1, float p2) {
 #define weight2 weight1
 #endif
 
-#ifndef N_OBJECTS
-#define N_OBJECTS 9999
-#endif
-
 bool check_visibility(vec3 pos, vec3 shadow_ray, vec3 normal, vec3 light_normal, int which_object, int light_object) {
     vec4 shadow_isec;
     if (dot(shadow_ray, normal) > 0.0 &&
@@ -117,7 +113,7 @@ vec3 render(vec2 xy, vec2 resolution) {
 
             vec3 ray_in = ray;
             last_sampling_prob = sample_ray_and_prob(material_id, going_out, normal, ray, color, rng);
-            if (last_sampling_prob == 0.0) break;
+            if (last_sampling_prob == 0.0 || color2prob(color*ray_color) > MAX_SAMPLE_WEIGHT) break;
 
             if (last_sampling_prob > 0.0 && bounce < N_BOUNCES && inside_object == 0) {
                 // no lights inside transparent objects supported
