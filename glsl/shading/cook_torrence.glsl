@@ -38,12 +38,17 @@ vec3 sample_ggx(vec3 normal, float alpha, inout rand_state rng) {
     return normal * cos(theta) + dir * sin(theta);
 }
 
-color_type get_color(int material_id) {
-    color_type reflection_color = get_reflectivity(material_id);
-    float r = color2prob(reflection_color);
+// sample weight for GGX specular samples if used in unidirectional tracing
+float ggx_sample_weight(float alpha, vec3 normal, vec3 i, vec3 o, vec3 m) {
+    float G = ggx_G1(i, m, normal, alpha) * ggx_G1(o, m, normal, alpha);
 
-    const float mystery_multiplier = 3.0; // ????
-    return (get_diffuse(material_id) * (1.0 - r) + reflection_color) * mystery_multiplier;
+    // cos(theta) * bdrf / Fresnel / sampling_pdf
+    // cos(theta) * D * G  / (4.0 * |i.n| * |o.n|) / (D * |m.n| / (4.0 * |o.m|))
+    // cos(theta) * G * |o.m| / (|i.n| * |o.n| * |m.n|) // cos(theta) = |o.n|
+    // G * |o.m| / (|i.n| * |m.n|)   // |o.m| = |i.m| (half vector)
+    // G * |i.m| / (|i.n| * |i.n|)
+    return dot(i, m) * G  / (dot(i, normal) * dot(m, normal));
+    // f / p without Fresnel term
 }
 
 float sampling_pdf_ggx(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
@@ -56,16 +61,27 @@ float sampling_pdf_ggx(int material_id, bool going_out, vec3 normal, vec3 ray_in
 }
 
 color_type brdf_cos_weighted(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
-    vec3 m = normalize(-ray_in + ray_out);
-    float alpha = get_roughness(material_id);
+    color_type specular;
+    color_type reflection_color = get_reflectivity(material_id);
+    color_type diffuse = get_diffuse(material_id) / M_PI;
+    if (color2prob(reflection_color) > 0.0) {
+        vec3 m = normalize(-ray_in + ray_out);
+        float alpha = get_roughness(material_id);
 
-    color_type color = get_color(material_id);
-    float cosT = max(min(dot(ray_out, m), 1.0), 0.0);
+        float cosT = max(min(dot(ray_out, m), 1.0), 0.0);
+        color_type F = fresnel_schlick_term(cosT, reflection_color);
+        float G = ggx_G1(-ray_in, m, normal, alpha) * ggx_G1(ray_out, m, normal, alpha);
+        float D = ggx_D(normal, m, alpha);
 
-    color_type F = fresnel_schlick_term(cosT, color);
-    float G = ggx_G1(-ray_in, m, normal, alpha) * ggx_G1(ray_out, m, normal, alpha);
-    float D = ggx_D(normal, m, alpha);
-    return F * D * G / (4.0 * dot(ray_out, m) * dot(-ray_in, normal)) * dot(ray_out, normal);
+        specular = F * D * G / (4.0 * dot(ray_out, m) * dot(-ray_in, normal));
+        // note: this is not mathematically exact for the microfacet model:
+        // should be something like \int (1.0 - F(m)) p(m) dm over all
+        // microfacet normals m, but seems to look fine
+        diffuse *= (1.0 - F);
+    } else {
+        specular = reflection_color; // = 0
+    }
+    return (specular + diffuse) * dot(ray_out, normal);
 }
 
 float get_specular(int material_id) {
@@ -85,7 +101,7 @@ float sampling_pdf(int material_id, bool going_out, vec3 normal, vec3 ray_in, ve
       (1.0 - specular) * dot(normal, ray_out) / M_PI; // lambert
 }
 
-bool sample_ray(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
+float sample_ray_and_prob(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
     float specular = get_specular(material_id);
     vec3 ray_in = ray;
 
@@ -95,23 +111,25 @@ bool sample_ray(int material_id, bool going_out, vec3 normal, inout vec3 ray, ou
       // microfacet normal
       vec3 m = sample_ggx(normal, alpha, rng);
       ray = ray - 2.0*dot(m, ray)*m;
+
+      // perfectly shiny surface cannot use bidirectional tracing
+      if (alpha <= 0.0) {
+          float cosT = max(min(dot(ray, m), 1.0), 0.0);
+          float w = ggx_sample_weight(alpha, normal, -ray_in, ray, m);
+          if (w <= 0.0) return 0.0;
+          weight = w * fresnel_schlick_term(cosT, get_reflectivity(material_id));
+          return -1.0;
+      }
     } else {
       ray = get_random_cosine_weighted(normal, rng);
     }
 
     float pdf = sampling_pdf(material_id, going_out, normal, ray_in, ray);
+    if (pdf <= 0.0) return 0.0;
     weight = brdf_cos_weighted(material_id, going_out, normal, ray_in, ray) / pdf;
-    if (pdf <= 0.0) {
-        weight *= 0.0;
-        return false;
-    }
-    return true;
+    return pdf;
 }
 
-float sample_ray_and_prob(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
-    vec3 ray_in = ray;
-    if (!sample_ray(material_id, going_out, normal, ray, weight, rng)) {
-        return 0.0;
-    }
-    return sampling_pdf(material_id, going_out, normal, ray_in, ray);
+bool sample_ray(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
+    return sample_ray_and_prob(material_id, going_out, normal, ray, weight, rng) != 0.0;
 }

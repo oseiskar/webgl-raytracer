@@ -117,6 +117,8 @@ vec3 render(vec2 xy, vec2 resolution) {
 
             vec3 ray_in = ray;
             last_sampling_prob = sample_ray_and_prob(material_id, going_out, normal, ray, color, rng);
+            if (last_sampling_prob == 0.0) break;
+
             if (last_sampling_prob > 0.0 && bounce < N_BOUNCES && inside_object == 0) {
                 // no lights inside transparent objects supported
                 vec3 shadow_ray = light_point - ray_pos;

@@ -63,7 +63,7 @@ function buildIfElseMaterials(uniqueMaterials, objectsById, shaderColorModel) {
     properties: [
       buildGenericProperty('diffuse', colorType),
       buildGenericProperty('ior', 'float', defaultValue='1.0'),
-      buildGenericProperty('roughness', 'float', defaultValue='1.0'), // for ggx
+      buildGenericProperty('roughness', 'float', defaultValue='0.0'),
       buildGenericProperty('reflectivity', colorType),
       buildGenericProperty('transparency', colorType)
     ],
@@ -87,7 +87,7 @@ function buildTextureMaterials(uniqueMaterials, objectsById, shaderColorModel) {
     ['reflectivity', 0],
     ['transparency', 0],
     ['ior', 1],
-    ['roughness', 1] // for using ggx for diffuse
+    ['roughness', 0]
   ].forEach(([property, defaultValue]) => {
     materialTextures[property] = [uniqueMaterials.map(material => {
       if (material.material.hasOwnProperty(property)) {

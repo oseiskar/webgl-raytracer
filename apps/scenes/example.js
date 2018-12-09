@@ -17,7 +17,7 @@ function emissionPerSurfaceArea(color, sphereR, totalIntensity=1.0) {
 const materials = {
   glass: {
     reflectivity: 0.1,
-    roughness: 0.01,
+    roughness: 0.0,
     transparency: 1, // sampled after reflectivity
     ior: 1.5
   },
