@@ -21,8 +21,8 @@ function render(options) {
   let resolution;
   if (!isFullScreen) resolution = options.resolution.split('x').map(x => parseInt(x));
   options.lightSampling = options.renderer.match(/bidirectional/);
-  // workaround... should not be fixed in cook_torrence
-  options.maxSampleWeight = options.specular === 'cook_torrence' ? 10.0 : 1e6;
+  // workaround... should not be fixed in ggx
+  options.maxSampleWeight = options.specular === 'ggx' ? 10.0 : 1e6;
 
   const { source, data } = sceneBuilders[options.scene](options.colors)
     .toggleDataTextures(options.dataTextures)
@@ -107,11 +107,8 @@ function start() {
     'path tracer': 'pathtracer',
     'bidirectional': 'bidirectional_tracer_1_light_vertex'
   });
-  gui.add('colors', 'rgb', ['rgb', 'grayscale']);
-  gui.add('specular', 'ggx', {
-    'simple': 'simple_rgb',
-    'ggx': 'cook_torrence'
-  });
+  gui.add('colors', 'rgb', ['grayscale', 'rgb']);
+  gui.add('specular', 'ggx', ['simple', 'ggx']);
   gui.add('dataTextures', true);
   gui.add('lightBounces', 4, [1,2,3,4,5]);
   gui.add('tentFilter', true);

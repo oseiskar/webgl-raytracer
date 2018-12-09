@@ -3,6 +3,11 @@
 #include "util/math.glsl"
 #include "util/random_helpers.glsl"
 
+/*
+ * GGX-based microfacet model suitable for bidirectional tracing of
+ * rough specular reflections
+ */
+
 float ggx_D(vec3 n, vec3 m, float alpha) {
     float mn = dot(m, n);
     if (mn < 0.0) return 0.0;
