@@ -22,7 +22,7 @@ function render(options) {
   if (!isFullScreen) resolution = options.resolution.split('x').map(x => parseInt(x));
   options.lightSampling = options.renderer.match(/bidirectional/);
   // workaround... should not be fixed in cook_torrence
-  options.maxSampleWeight = options.scatteringModel === 'cook_torrence' ? 10.0 : 1e10;
+  options.maxSampleWeight = options.scatteringModel === 'cook_torrence' ? 10.0 : 1e6;
 
   const { source, data } = sceneBuilders[options.scene](options.colorModel)
     .toggleDataTextures(options.dataTextures)

@@ -113,7 +113,8 @@ vec3 render(vec2 xy, vec2 resolution) {
 
             vec3 ray_in = ray;
             last_sampling_prob = sample_ray_and_prob(material_id, going_out, normal, ray, color, rng);
-            if (last_sampling_prob == 0.0 || color2prob(color*ray_color) > MAX_SAMPLE_WEIGHT) break;
+            float cur_sample_weight = color2prob(color)*(ray_color.x + ray_color.y + ray_color.z) / 3.0;
+            if (last_sampling_prob == 0.0 || cur_sample_weight > MAX_SAMPLE_WEIGHT) break;
 
             if (last_sampling_prob > 0.0 && bounce < N_BOUNCES && inside_object == 0) {
                 // no lights inside transparent objects supported
