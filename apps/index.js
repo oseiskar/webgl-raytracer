@@ -22,9 +22,9 @@ function render(options) {
   if (!isFullScreen) resolution = options.resolution.split('x').map(x => parseInt(x));
   options.lightSampling = options.renderer.match(/bidirectional/);
   // workaround... should not be fixed in cook_torrence
-  options.maxSampleWeight = options.scatteringModel === 'cook_torrence' ? 10.0 : 1e6;
+  options.maxSampleWeight = options.specular === 'cook_torrence' ? 10.0 : 1e6;
 
-  const { source, data } = sceneBuilders[options.scene](options.colorModel)
+  const { source, data } = sceneBuilders[options.scene](options.colors)
     .toggleDataTextures(options.dataTextures)
     .buildScene();
 
@@ -46,7 +46,7 @@ function render(options) {
         'rand/fixed_vecs.glsl'
       },
       shading: {
-        file: `shading/${options.scatteringModel}.glsl`
+        file: `shading/${options.specular}.glsl`
       },
       parameters: { source: Mustache.render(`
         #define N_BOUNCES {{lightBounces}}
@@ -107,9 +107,9 @@ function start() {
     'path tracer': 'pathtracer',
     'bidirectional': 'bidirectional_tracer_1_light_vertex'
   });
-  gui.add('colorModel', 'rgb', ['rgb', 'grayscale']);
-  gui.add('scatteringModel', 'ggx', {
-    'lambert': 'simple_rgb',
+  gui.add('colors', 'rgb', ['rgb', 'grayscale']);
+  gui.add('specular', 'ggx', {
+    'simple': 'simple_rgb',
     'ggx': 'cook_torrence'
   });
   gui.add('dataTextures', true);

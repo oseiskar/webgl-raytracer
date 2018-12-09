@@ -105,6 +105,8 @@ float sample_ray_and_prob(int material_id, bool going_out, vec3 normal, inout ve
     float specular = get_specular(material_id);
     vec3 ray_in = ray;
 
+    float extra_weight = 1.0;
+
     if (rand_next_uniform(rng) < specular) {
       float alpha = get_roughness(material_id);
 
@@ -142,7 +144,8 @@ float sample_ray_and_prob(int material_id, bool going_out, vec3 normal, inout ve
               ray = eta * ray - (eta * d + sqrt(k)) * m;
           }
       } else {
-          F *= 1.0 / (1.0 - transmission_prob);
+          extra_weight = 1.0 / (1.0 - transmission_prob);
+          F *= extra_weight;
 
           // reflection
           ray = ray - 2.0*dot(m, ray)*m;
@@ -162,7 +165,7 @@ float sample_ray_and_prob(int material_id, bool going_out, vec3 normal, inout ve
 
     float pdf = sampling_pdf(material_id, going_out, normal, ray_in, ray);
     if (pdf <= 0.0) return 0.0;
-    weight = brdf_cos_weighted(material_id, going_out, normal, ray_in, ray) / pdf;
+    weight = extra_weight * brdf_cos_weighted(material_id, going_out, normal, ray_in, ray) / pdf;
     return pdf;
 }
 
