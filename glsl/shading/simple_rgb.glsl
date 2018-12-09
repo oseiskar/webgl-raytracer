@@ -16,15 +16,21 @@ bool sample_specular(int material_id, bool going_out, vec3 normal, inout vec3 ra
     float choice_sample = rand_next_uniform(rng);
     float roughness = get_roughness(material_id);
 
+    vec3 n = normal;
+
+    // simple "roughness" handling
+    if (roughness >= 0.0) {
+        // sample microsurface normal
+        n = normalize(n + rand_next_gauss3(rng)*roughness);
+    }
+
     if (color_prob_choice(get_reflectivity(material_id), weight, choice_sample)) {
         // full reflection
-        ray = ray - 2.0*dot(normal, ray)*normal;
-        if (roughness > 0.0) {
-          ray = normalize(ray + rand_next_gauss3(rng)*roughness);
-          // simple way of handling large roughness and rays that "reflect"
-          // to the wrong direction
-          if (dot(ray, normal) < 0.0) ray = ray - 2.0*dot(normal, ray)*normal;
-        }
+        ray = ray - 2.0*dot(n, ray)*n;
+
+        // check with original normal, needed to prevent light leak into
+        // opaque objects
+        if (dot(ray, normal) < 0.0) return false;
         return true;
     }
     if (color_prob_choice(get_transparency(material_id), weight, choice_sample)) {
@@ -37,21 +43,15 @@ bool sample_specular(int material_id, bool going_out, vec3 normal, inout vec3 ra
           eta = 1.0 / eta;
         }
 
-        // simple "roughness" handling
-        if (roughness > 0.0) {
-          ray = normalize(ray + rand_next_gauss3(rng)*roughness);
-          if (dot(ray, normal) < 0.0) ray = ray - 2.0*dot(normal, ray)*normal;
-        }
-
         // see https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/refract.xhtml
         // Snell's law for refraction
-        float d = dot(normal, ray);
+        float d = dot(n, ray);
         float k = 1.0 - eta*eta * (1.0 - d*d);
         if (k < 0.0) {
             // total reflection
-            ray = ray - 2.0*d*normal;
+            ray = ray - 2.0*d*n;
         } else {
-            ray = eta * ray - (eta * d + sqrt(k)) * normal;
+            ray = eta * ray - (eta * d + sqrt(k)) * n;
         }
         return true;
     }
