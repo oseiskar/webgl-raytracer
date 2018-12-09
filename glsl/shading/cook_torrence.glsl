@@ -110,14 +110,50 @@ float sample_ray_and_prob(int material_id, bool going_out, vec3 normal, inout ve
 
       // microfacet normal
       vec3 m = sample_ggx(normal, alpha, rng);
-      ray = ray - 2.0*dot(m, ray)*m;
+
+      color_type F = fresnel_schlick_term(
+        max(min(dot(-ray_in, m), 1.0), 0.0), // cos(theta)
+        get_reflectivity(material_id));
+
+      color_type transparency = (1.0 - F)*get_transparency(material_id);
+      float transmission_prob = color2prob(transparency);
+
+      bool selected_transmission = rand_next_uniform(rng) < transmission_prob;
+      if (selected_transmission) {
+          F = transparency / transmission_prob;
+
+          // refraction
+          float eta = 1.0 / get_ior(material_id);
+
+          if (going_out) {
+            // simplification: "out" of any object is always vacuum
+            // and no nested transparent objects are supported
+            eta = 1.0 / eta;
+          }
+
+          // see https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/refract.xhtml
+          // Snell's law for refraction
+          float d = dot(m, ray);
+          float k = 1.0 - eta*eta * (1.0 - d*d);
+          if (k < 0.0) {
+              // total reflection
+              ray = ray - 2.0*d*m;
+          } else {
+              ray = eta * ray - (eta * d + sqrt(k)) * m;
+          }
+      } else {
+          F *= 1.0 / (1.0 - transmission_prob);
+
+          // reflection
+          ray = ray - 2.0*dot(m, ray)*m;
+      }
 
       // perfectly shiny surface cannot use bidirectional tracing
-      if (alpha <= 0.0) {
-          float cosT = max(min(dot(ray, m), 1.0), 0.0);
+      // also using unidirectional shading for refraction (for simplicity)
+      if (alpha <= 0.0 || selected_transmission) {
           float w = ggx_sample_weight(alpha, normal, -ray_in, ray, m);
           if (w <= 0.0) return 0.0;
-          weight = w * fresnel_schlick_term(cosT, get_reflectivity(material_id));
+          weight = w * F;
           return -1.0;
       }
     } else {
