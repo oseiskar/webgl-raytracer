@@ -61,7 +61,6 @@ function render(options) {
       }
     }),
     monte_carlo: true,
-    refresh_every: 10,
     uniforms: {
       resolution: 'resolution',
       base_image: 'previous_frame',
