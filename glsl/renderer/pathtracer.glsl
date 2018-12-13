@@ -55,7 +55,7 @@ vec3 render(vec2 xy, vec2 resolution) {
             }
 
             // workaround for nasty samples
-            if (color2prob(ray_color) > MAX_SAMPLE_WEIGHT) break;
+            if ((ray_color.x + ray_color.y + ray_color.z) / 3.0 > MAX_SAMPLE_WEIGHT) break;
 
             if (dot(ray, normal) < 0.0) {
                 if (going_out) {
