@@ -22,7 +22,14 @@ const materials = {
     ior: 1.5
   },
   teal: {
+    reflectivity: [.25, .4, .45],
+    roughness: 0.33,
     diffuse: [.25, .4, .45]
+  },
+  plastic: {
+    reflectivity: 0.03,
+    roughness: 0.15,
+    diffuse: [0.4, 0.4, 0.1]
   },
   light1: {
     emission: emissionPerSurfaceArea([0.8, 0.8, 1.0], LIGHT_R, BRIGHTNESS)
@@ -46,14 +53,15 @@ function getBuilder(shaderColorType = 'rgb') {
   return new SceneBuilder()
     .setColorModel(shaderColorType)
     .setFixedPinholeCamera({
-      fov: 50,
-      yaw: 300,
+      fov: 40,
+      yaw: 200,
       pitch: -5,
-      target: [-0.5, 0.0, 0.35],
+      target: [-0.9, 0.1, 0.15],
       distance: 2.6
     })
-    .addObject(new Sphere(0.5), [0.0, 0.0, 0.5], m.teal)
-    .addObject(new Sphere(0.25), [-1.1, 0.3, 0.25], m.glass)
+    .addObject(new Sphere(0.3), [0.0, 0.0, 0.3], m.teal)
+    .addObject(new Sphere(0.25), [-1.1, 0.25, 0.25], m.glass)
+    .addObject(new Sphere(0.1), [-0.1, 0.8, 0.1], m.plastic)
     .addObject(new Sphere(LIGHT_R), [-ROOM_W*0.5, 0.0, ROOM_H], m.light1)
     .addObject(new Sphere(LIGHT_R), [0.0, ROOM_W*0.5, ROOM_H], m.light2)
     .addObject(new Plane([0,0,1]), [0,0,0], m.floor)
