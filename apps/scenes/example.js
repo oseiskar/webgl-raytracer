@@ -57,7 +57,9 @@ function getBuilder(shaderColorType = 'rgb') {
       yaw: 200,
       pitch: -5,
       target: [-0.9, 0.1, 0.15],
-      distance: 2.6
+      distance: 2.6,
+      apertureSize: 0.02,
+      focusDistance: 1.6
     })
     .addObject(new Sphere(0.3), [0.0, 0.0, 0.3], m.teal)
     .addObject(new Sphere(0.25), [-1.1, 0.25, 0.25], m.glass)

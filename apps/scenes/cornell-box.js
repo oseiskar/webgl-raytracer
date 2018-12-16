@@ -38,8 +38,10 @@ function getBuilder(shaderColorType = 'rgb') {
       fov: Math.atan(25/35)/Math.PI*180.0 * Math.sqrt(2),
       yaw: 90,
       pitch: 0,
+      apertureSize: 10,
       target: [278, 0, 273], // assumed
-      distance: 800
+      distance: 800,
+      focusDistance: 1000
     })
     .addObject(new Plane([1, 0, 0]), [0,0,0], m.leftWall)
     .addObject(new Plane([-1, 0, 0]), [548,0,0], m.rightWall)

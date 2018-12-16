@@ -43,7 +43,7 @@ function render(options) {
         file: `renderer/${options.renderer}.glsl`
       },
       scene: { source },
-      camera: { file: 'camera/pinhole.glsl' },
+      camera: { file: `camera/${options.camera}.glsl` },
       rand: { file: options.dataTextures ?
         'rand/textures.glsl' :
         'rand/fixed_vecs.glsl'
@@ -111,6 +111,7 @@ function start() {
   });
   gui.add('colors', 'rgb', ['grayscale', 'rgb']);
   gui.add('specular', 'ggx', ['simple', 'ggx']);
+  gui.add('camera', 'pinhole', ['pinhole', 'thin_lens']);
   gui.add('dataTextures', true);
   gui.add('lightBounces', 4, [1,2,3,4,5]);
   gui.add('tentFilter', true);

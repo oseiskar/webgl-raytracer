@@ -16,4 +16,7 @@ void get_pinhole_camera(out vec3 cam_pos, out vec3 cam_x, out vec3 cam_y, out ve
   cam_pos = -cam_z * cam_dist + camera_target;
 }
 
+float get_aperture_size() { return {{apertureSize}}; }
+float get_focus_distance() { return {{focusDistance}}; }
+
 #endif

@@ -190,7 +190,8 @@ function SceneBuilder() {
         pitch: 0.0,
         yaw: 0.0,
         target: [0,0,0],
-        distance: 1
+        distance: 1,
+        apertureSize: 0.01
       };
       const p = Object.assign(defaults, parameters);
 
@@ -207,18 +208,22 @@ function SceneBuilder() {
         p.thetaRad = deg2rad(p.yaw);
       }
 
+      p.foc
+
       return {
         fovAngleRad: toFloat(deg2rad(p.fov)),
         phiRad: toFloat(p.phiRad),
         thetaRad: toFloat(p.thetaRad),
         // TODO: roll not supported
         distance: toFloat(p.distance),
-        targetList: p.target.join(',')
+        targetList: p.target.join(','),
+        apertureSize: toFloat(p.apertureSize),
+        focusDistance: toFloat(p.focusDistance || p.distance)
       };
     }
 
     cameraSource = Mustache.render(
-      tracerData.templates['fixed_pinhole_camera.glsl.mustache'],
+      tracerData.templates['fixed_camera.glsl.mustache'],
       transformParameters());
     return this;
   };
