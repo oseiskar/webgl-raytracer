@@ -193,10 +193,24 @@ function SceneBuilder() {
         distance: 1
       };
       const p = Object.assign(defaults, parameters);
+
+      if (p.position) {
+        // position-target format
+        const delta = [0,1,2].map(i => p.target[i] - p.position[i]);
+        p.distance = Math.sqrt(delta.map(x => x*x).reduce((a,b) => a+b));
+        p.phiRad = -Math.atan2(delta[2], Math.sqrt(delta[0]*delta[0] + delta[1]*delta[1]));
+        p.thetaRad = Math.atan2(delta[1], delta[0]);
+      }
+      else {
+        // target + angles & distance format
+        p.phiRad = deg2rad(-p.pitch);
+        p.thetaRad = deg2rad(p.yaw);
+      }
+
       return {
         fovAngleRad: toFloat(deg2rad(p.fov)),
-        phiRad: toFloat(deg2rad(-p.pitch)),
-        thetaRad: toFloat(deg2rad(p.yaw)),
+        phiRad: toFloat(p.phiRad),
+        thetaRad: toFloat(p.thetaRad),
         // TODO: roll not supported
         distance: toFloat(p.distance),
         targetList: p.target.join(',')

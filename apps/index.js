@@ -10,6 +10,7 @@ const sceneBuilders = {
   'Example': require('./scenes/example.js'),
   'Cornell Box': require('./scenes/cornell-box.js'),
   'Window': require('./scenes/window.js'),
+  'Boxy': require('./scenes/boxy.js'),
   'Stair Spiral': require('./scenes/stair-spiral.js')
 };
 
