@@ -208,8 +208,6 @@ function SceneBuilder() {
         p.thetaRad = deg2rad(p.yaw);
       }
 
-      p.foc
-
       return {
         fovAngleRad: toFloat(deg2rad(p.fov)),
         phiRad: toFloat(p.phiRad),
