@@ -17,4 +17,4 @@ boilerplate, for example, everything not related to "worlds with two triangles".
 ### Usage
 
     python -m SimpleHTTPServer # or similar
-    # then go to http://localhost:8000/?tracer=test
+    # then go to http://localhost:8000/
