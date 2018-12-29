@@ -3,15 +3,15 @@ function convertToGrayscale(property, value) {
   // if already a number
   if (Number.isFinite(value)) return value;
   // if RGB
-  if (value.length === 3) return (value[0]+value[1]+value[2])/3;
+  if (value.length === 3) return (value[0] + value[1] + value[2]) / 3;
 
   throw new Error(`cannot convert ${JSON.stringify(value)} to scalar ${property}`);
 }
 
 function convertToRgb(property, value) {
   const isScalar = {
-    'ior': true,
-    'roughness': true
+    ior: true,
+    roughness: true
   };
   if (isScalar[property]) {
     return convertToGrayscale(property, value);
@@ -31,10 +31,10 @@ function autoConvert(material, toType) {
   }[toType];
 
   const converted = {};
-  Object.keys(material).forEach(key => {
+  Object.keys(material).forEach((key) => {
     const newMat = {};
     const srcMat = material[key];
-    Object.keys(srcMat).forEach(property => {
+    Object.keys(srcMat).forEach((property) => {
       newMat[property] = convert(property, srcMat[property]);
     });
     converted[key] = newMat;
@@ -44,4 +44,4 @@ function autoConvert(material, toType) {
 
 module.exports = {
   autoConvert
-}
+};

@@ -1,5 +1,6 @@
 const tracerData = require('../../glsl/index.js');
 const autoName = require('../auto_tracer_name.js');
+
 const tracerCode = tracerData.surfaces['plane.glsl'];
 
 /**
@@ -9,13 +10,11 @@ function Plane(normal) {
   this.tracer = {
     name: autoName(tracerCode),
     code: tracerCode
-  }
+  };
   this.parameters = [`vec3(${normal.join(',')})`]; // also works with integers
   this.noInside = true;
 
-  this.parametersAsList = () => {
-    return [...normal];
-  };
+  this.parametersAsList = () => [...normal];
   this.parametersFromVec4Code = 'parameters.xyz';
 }
 

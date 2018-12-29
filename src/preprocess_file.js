@@ -1,8 +1,8 @@
 function preprocessFile(mainFile, includeMapping, files) {
   // this might break down if utilizing heavy preprocessor magic near
   // the #include directive
-  function getIncludeTarget(line) {
-    line = line.trim('');
+  function getIncludeTarget(l) {
+    const line = l.trim('');
     // try to handle commented includes... not bulletproof
     if (line.startsWith('//') || line.startsWith('/*')) return null;
 
@@ -13,7 +13,7 @@ function preprocessFile(mainFile, includeMapping, files) {
 
   function isString(str) {
     // https://stackoverflow.com/a/17772086/1426569
-    return Object.prototype.toString.call(str) === "[object String]";
+    return Object.prototype.toString.call(str) === '[object String]';
   }
 
   function getFile(fn) {
@@ -39,19 +39,18 @@ function preprocessFile(mainFile, includeMapping, files) {
 
   function preprocess(source) {
     const result = [];
-    source.split('\n').forEach(line => {
+    source.split('\n').forEach((line) => {
       // find include directive
       const includeTarget = getIncludeTarget(line);
       if (includeTarget) {
         if (!included[includeTarget]) {
           included[includeTarget] = true;
           const resolved = resolveTarget(includeTarget);
-          if (!resolved)
-            throw new Error(`#include <${includeTarget}> not specified`);
+          if (!resolved) throw new Error(`#include <${includeTarget}> not specified`);
+          // eslint-disable-next-line no-use-before-define
           result.push(doPreprocess(resolved));
         }
-      }
-      else if (line) {
+      } else if (line) {
         result.push(line);
       }
     });

@@ -1,0 +1,5 @@
+extends: airbnb-base
+rules:
+  no-plusplus: off
+  no-prototype-builtins: off
+  comma-dangle: [error, never]

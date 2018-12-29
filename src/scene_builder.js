@@ -4,11 +4,9 @@ const tracerData = require('../glsl/index.js');
 // this file is also becoming quite terrible
 
 function positionAndRotation(m) {
-  if (m.length == 3)
-    return { position: m };
+  if (m.length === 3) return { position: m };
 
-  if (m.length != 16)
-    throw new Error('invalid transformation, expected 3-vector or 16 entries of a 4x4 row-major matrix');
+  if (m.length !== 16) throw new Error('invalid transformation, expected 3-vector or 16 entries of a 4x4 row-major matrix');
 
   return {
     position: [m[12], m[13], m[14]],
@@ -27,30 +25,32 @@ function toVec3(x) {
 
 function buildIfElseMaterials(uniqueMaterials, objectsById, shaderColorModel) {
   function addFirstFlag(list) {
-    if (list.length > 0) { list[0].first = true; }
-    return list;
+    const newList = [...list];
+    if (newList.length > 0) newList[0].first = true;
+    return newList;
   }
 
   function buildGenericProperty(name, type, defaultValue) {
+    let defaultVal = defaultValue;
     let formatType;
     if (type === 'vec3') {
       formatType = toVec3;
-      defaultValue = defaultValue || 'vec3(0, 0, 0)';
+      defaultVal = defaultVal || 'vec3(0, 0, 0)';
     } else {
       formatType = x => `float(${x})`;
-      defaultValue = defaultValue || '0.0';
+      defaultVal = defaultVal || '0.0';
     }
     return {
       name,
       type,
-      default: defaultValue,
+      default: defaultVal,
       materials: addFirstFlag(uniqueMaterials
         .filter(mat => mat.material[name])
         .map(mat => ({
           objects: mat.objects.map(obj => ({ id: obj.id })),
           value: formatType(mat.material[name])
         })))
-    }
+    };
   }
 
   const colorType = shaderColorModel === 'rgb' ? 'vec3' : 'float';
@@ -62,16 +62,15 @@ function buildIfElseMaterials(uniqueMaterials, objectsById, shaderColorModel) {
     materialEmissions: buildGenericProperty('emission', colorType).materials,
     properties: [
       buildGenericProperty('diffuse', colorType),
-      buildGenericProperty('ior', 'float', defaultValue='1.0'),
-      buildGenericProperty('roughness', 'float', defaultValue='0.0'),
+      buildGenericProperty('ior', 'float', '1.0'),
+      buildGenericProperty('roughness', 'float', '0.0'),
       buildGenericProperty('reflectivity', colorType),
       buildGenericProperty('transparency', colorType)
-    ],
+    ]
   });
 }
 
 function buildTextureMaterials(uniqueMaterials, objectsById, shaderColorModel) {
-
   function valueToVec(val) {
     if (Number.isFinite(val)) return [val, val, val, 1.0];
     if (val.length === 4) return val;
@@ -89,27 +88,26 @@ function buildTextureMaterials(uniqueMaterials, objectsById, shaderColorModel) {
     ['ior', 1],
     ['roughness', 0]
   ].forEach(([property, defaultValue]) => {
-    materialTextures[property] = [uniqueMaterials.map(material => {
+    materialTextures[property] = [uniqueMaterials.map((material) => {
       if (material.material.hasOwnProperty(property)) {
         return valueToVec(material.material[property]);
-      } else {
-        return valueToVec(defaultValue);
       }
+      return valueToVec(defaultValue);
     })];
   });
 
   const nMaterials = uniqueMaterials.length;
-  const objectIds = Object.keys(objectsById).map(x => parseInt(x));
-  const maxObjectId = objectIds.reduce((x,y) => Math.max(x,y));
+  const objectIds = Object.keys(objectsById).map(x => parseInt(x, 10));
+  const maxObjectId = objectIds.reduce((x, y) => Math.max(x, y));
   const materialIds = [];
-  for (let i=0; i <= maxObjectId; ++i) {
+  for (let i = 0; i <= maxObjectId; ++i) {
     const obj = objectsById[i];
     let matId = 0;
     if (obj) matId = obj.materialId;
     materialIds.push(valueToVec(matId));
   }
 
-  materialTextures['material_id'] = [materialIds];
+  materialTextures.material_id = [materialIds];
 
   const colorType = shaderColorModel === 'rgb' ? 'vec3' : 'float';
   const vectorMember = colorType === 'vec3' ? 'xyz' : 'x';
@@ -160,14 +158,14 @@ function SceneBuilder() {
   let enableMaterialTextures = true;
   let enableGeometryTextures = true;
 
-  const deg2rad = (x) => x / 180.0 * Math.PI;
-  const toFloat = (x) => `float(${x})`;
+  const deg2rad = x => x / 180.0 * Math.PI;
+  const toFloat = x => `float(${x})`;
 
   this.addObject = (surface, positionOrMatrix, material) => {
     objects.push({
       material,
       ...surface,
-      ...positionAndRotation(positionOrMatrix),
+      ...positionAndRotation(positionOrMatrix)
     });
     return this;
   };
@@ -189,7 +187,7 @@ function SceneBuilder() {
         fov: 50.0,
         pitch: 0.0,
         yaw: 0.0,
-        target: [0,0,0],
+        target: [0, 0, 0],
         distance: 1,
         apertureSize: 0.01
       };
@@ -197,12 +195,11 @@ function SceneBuilder() {
 
       if (p.position) {
         // position-target format
-        const delta = [0,1,2].map(i => p.target[i] - p.position[i]);
-        p.distance = Math.sqrt(delta.map(x => x*x).reduce((a,b) => a+b));
-        p.phiRad = -Math.atan2(delta[2], Math.sqrt(delta[0]*delta[0] + delta[1]*delta[1]));
+        const delta = [0, 1, 2].map(i => p.target[i] - p.position[i]);
+        p.distance = Math.sqrt(delta.map(x => x * x).reduce((a, b) => a + b));
+        p.phiRad = -Math.atan2(delta[2], Math.sqrt(delta[0] * delta[0] + delta[1] * delta[1]));
         p.thetaRad = Math.atan2(delta[1], delta[0]);
-      }
-      else {
+      } else {
         // target + angles & distance format
         p.phiRad = deg2rad(-p.pitch);
         p.thetaRad = deg2rad(p.yaw);
@@ -222,7 +219,8 @@ function SceneBuilder() {
 
     cameraSource = Mustache.render(
       tracerData.templates['fixed_camera.glsl.mustache'],
-      transformParameters());
+      transformParameters(),
+    );
     return this;
   };
 
@@ -236,13 +234,13 @@ function SceneBuilder() {
     const objectsPerMaterial = {};
     const objectsById = {};
 
-    objects.forEach(obj => {
-      const tracer = obj.tracer;
+    objects.forEach((obj) => {
+      const tracer = { ...obj.tracer };
       if (!objectsPerTracer[tracer.name]) {
         objectsPerTracer[tracer.name] = [];
-        uniqueTracers.push({...tracer});
+        uniqueTracers.push({ ...tracer });
       }
-      const sampler = obj.sampler;
+      const sampler = { ...obj.sampler };
       if (sampler && !samplerNameSet[sampler.name]) {
         samplerNameSet[sampler.name] = true;
         uniqueSamplers.push(sampler.code);
@@ -263,8 +261,8 @@ function SceneBuilder() {
       objectViews.push(objectView);
       objectsPerTracer[tracer.name].push(objectView);
 
-      const material = obj.material;
-      let materialId = material.id || JSON.stringify(material);
+      const material = { ...obj.material };
+      const materialId = material.id || JSON.stringify(material);
       if (!objectsPerMaterial[materialId]) {
         objectsPerMaterial[materialId] = [];
         uniqueMaterials.push({
@@ -277,52 +275,55 @@ function SceneBuilder() {
 
     const geometryData = {
       position: [[]],
-      rotation: [[],[],[]],
+      rotation: [[], [], []],
       parameter: [[]]
     };
     let objectId = 1;
-    uniqueTracers.forEach(uniqTracer => {
+    uniqueTracers.forEach((uniqTracer) => {
+      /* eslint-disable no-param-reassign */
       uniqTracer.objects = objectsPerTracer[uniqTracer.name];
       uniqTracer.minObjectId = objectId;
       uniqTracer.convex = uniqTracer.objects[0].convex;
       uniqTracer.noInside = uniqTracer.objects[0].noInside;
-      uniqTracer.objects.forEach(objectView => {
+      uniqTracer.objects.forEach((objectView) => {
         objectView.id = objectId;
         objectsById[objectId] = objectView;
         objectId++;
         uniqTracer.anyRotated = uniqTracer.anyRotated || objectView.hasRotation;
         if (enableGeometryTextures) {
-          const obj = objectView.obj;
+          const obj = { ...objectView.obj };
 
           geometryData.position[0].push(obj.position.concat([0]));
-          const r = obj.rotation || [1,0,0,0,1,0,0,0,1];
-          geometryData.rotation[0].push([r[0],r[1],r[2], 0]);
-          geometryData.rotation[1].push([r[3],r[4],r[5], 0]);
-          geometryData.rotation[2].push([r[6],r[7],r[8], 0]);
+          const r = obj.rotation || [1, 0, 0, 0, 1, 0, 0, 0, 1];
+          geometryData.rotation[0].push([r[0], r[1], r[2], 0]);
+          geometryData.rotation[1].push([r[3], r[4], r[5], 0]);
+          geometryData.rotation[2].push([r[6], r[7], r[8], 0]);
 
           if (obj.parameters) {
-            uniqTracer.parameterListLeadingComma = ', ' + obj.parametersFromVec4Code;
+            uniqTracer.parameterListLeadingComma = `, ${obj.parametersFromVec4Code}`;
           }
           const params = obj.parametersAsList();
           while (params.length < 4) params.push(0);
           geometryData.parameter[0].push(params);
         }
       });
-      uniqTracer.maxObjectId = objectId-1;
+      uniqTracer.maxObjectId = objectId - 1;
       uniqTracer.nObjects = objectViews.length;
+      /* eslint-enable no-param-reassign */
     });
 
     let materialId = 0;
-    uniqueMaterials.forEach(material => {
-      material.objects.forEach(objectView => {
+    uniqueMaterials.forEach((material) => {
+      material.objects.forEach((objectView) => {
+        // eslint-disable-next-line no-param-reassign
         objectView.materialId = materialId;
       });
       materialId++;
     });
 
     const lights = [];
-    uniqueMaterials.filter(mat => mat.material.emission).forEach(mat => {
-      mat.objects.forEach(obj => {
+    uniqueMaterials.filter(mat => mat.material.emission).forEach((mat) => {
+      mat.objects.forEach((obj) => {
         if (obj.samplerName) {
           lights.push(obj);
         }
@@ -332,10 +333,12 @@ function SceneBuilder() {
     let materialCode;
     const materialData = {};
     if (enableMaterialTextures) {
-      const { materialTextures, code } = buildTextureMaterials(uniqueMaterials, objectsById, shaderColorModel);
+      const { materialTextures, code } = buildTextureMaterials(
+        uniqueMaterials, objectsById, shaderColorModel
+      );
       materialCode = code;
-      Object.keys(materialTextures).forEach(property => {
-        materialData[property+'_texture'] = {
+      Object.keys(materialTextures).forEach((property) => {
+        materialData[`${property}_texture`] = {
           data: materialTextures[property]
         };
       });
@@ -347,8 +350,8 @@ function SceneBuilder() {
     let geometryTemplate = 'geometry.glsl.mustache';
     if (enableGeometryTextures) {
       geometryTemplate = 'texture_geometry.glsl.mustache';
-      Object.keys(geometryData).forEach(property => {
-        geometryTextureData[property+'_texture'] = {
+      Object.keys(geometryData).forEach((property) => {
+        geometryTextureData[`${property}_texture`] = {
           data: geometryData[property]
         };
       });
@@ -375,6 +378,6 @@ function SceneBuilder() {
       }
     };
   };
-};
+}
 
 module.exports = SceneBuilder;

@@ -8,11 +8,15 @@
     "twgl.js": "^4.5.2"
   },
   "devDependencies": {
+    "eslint": "^5.11.1",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-import": "^2.14.0",
     "watchify": "^3.11.0"
   },
   "scripts": {
     "build": "./build.sh && npm run browserify",
     "browserify": "browserify -r twgl.js -t brfs -r ./apps/index.js:app -o build/bundle.js",
-    "watch": "watchify -r twgl.js -t brfs -r ./apps/index.js:app -o build/bundle.js"
+    "watch": "watchify -r twgl.js -t brfs -r ./apps/index.js:app -o build/bundle.js",
+    "lint": "./node_modules/.bin/eslint src/"
   }
 }

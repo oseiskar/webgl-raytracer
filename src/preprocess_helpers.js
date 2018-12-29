@@ -4,7 +4,7 @@ const preprocessFile = require('./preprocess_file.js');
 function preprocess(mainFile, defines) {
   const paths = {};
   const overrides = {};
-  Object.keys(defines).forEach(target => {
+  Object.keys(defines).forEach((target) => {
     const v = defines[target];
     if (v.file) {
       paths[target] = v.file;
