@@ -11,10 +11,11 @@
       body {
         margin: 0;
         background: gray;
+        color: black;
       }
 
       canvas {
-        border: 4px solid black;
+        border: 2px solid black;
         box-sizing: content-box !important;
       }
 
@@ -63,6 +64,15 @@
 
       .gui select {
         width: 100%;
+        color: black !important;
+        border: none;
+        background: #999 !important;
+      }
+
+      option {
+        /* white background flash bug in Chrome (at least on Linux) */
+        background: white !important;
+        background-color: white !important;
       }
 
       .gui button {
@@ -71,8 +81,8 @@
 
       .gui.col {
         min-height: 2em;
-        vertical-align: center;
         display: flex;
+        align-items: center;
       }
 
       .gui.row {
@@ -92,7 +102,6 @@
         border: 0 !important;
         width: 30%;
         max-width: 500px;
-        background: white;
         display: block;
         overflow: hidden;
       }
@@ -103,12 +112,6 @@
 
       #shader-source {
         display: block;
-      }
-
-      .btn {
-        background: none;
-        color: black;
-        border: 1px solid black;
       }
 
       .invisible-textarea-trick {

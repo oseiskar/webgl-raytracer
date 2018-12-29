@@ -57,26 +57,29 @@ function GUI(el) {
       input = document.createElement('select');
       Object.keys(obj).forEach(key => {
         const option = document.createElement('option');
-        option.value = key;
-        option.innerText = obj[key];
+        option.value = obj[key];
+        option.innerText = key;
         input.appendChild(option);
       });
-      input.value = defaultValue;
+      input.value = obj[defaultValue];
       input.onchange = () => {
         options[name] = input.value;
         if (onChange) onChange(options);
       };
+      // Bootstrap styles
+      input.classList.add('form-control', 'form-control-sm');
     }
     input.classList.add('gui');
     inputCol.appendChild(input);
+    return input;
   }
 
   this.add = (name, defaultValue, opts) => {
-    addInput(name, defaultValue, opts, anyChange);
+    return addInput(name, defaultValue, opts, anyChange);
   };
 
   this.addIsolated = (name, defaultValue, opts, onChange) => {
-    addInput(name, defaultValue, opts, onChange);
+    return addInput(name, defaultValue, opts, onChange);
   };
 
   this.addButton = (name, action) => {
@@ -86,12 +89,14 @@ function GUI(el) {
     btn = document.createElement('button');
     col.appendChild(btn);
     btn.innerText = name;
-    btn.classList.add('gui');
+    // Bootstrap styles
+    btn.classList.add('gui', 'btn', 'btn-sm');
     btn.onclick = action;
 
     const row = addRow();
     row.appendChild(createCol());
     row.appendChild(col);
+    return btn;
   };
 
   this.onChange = (func) => {
