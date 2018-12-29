@@ -1,85 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>WebGL raytracer examples</title>
-        <meta charset="utf-8">
-        <style>
+  <head>
+    <title>WebGL raytracer examples</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+      crossorigin="anonymous">
+    <style>
 
-          body {
-            margin: 0;
-            background: gray;
-          }
+      body {
+        margin: 0;
+        background: gray;
+      }
 
-          canvas {
-            border: 4px solid black;
-          }
+      canvas {
+        border: 4px solid black;
+        box-sizing: content-box !important;
+      }
 
-          .fullscreen canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-            border: 0 !important;
-          }
+      #shader-container {
+        display: flex;
+        justify-content: center;
+      }
 
-          #shader-container {
-            padding-top: 5%;
-            display: flex;
-            justify-content: center;
-          }
+      .container {
+        margin-top: 5%;
+        margin-bottom: 2%;
+      }
 
-          #shader-container.fullscreen {
-            padding: 0 !important;
-            width: 100vw;
-            height: 100vh;
-          }
+      .fullscreen canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        border: 0 !important;
+      }
 
-          #shader-source-container {
-            padding-top: 3%;
-            display: flex;
-            justify-content: center;
-            padding-bottom: 3%;
-          }
+      .fullscreen.expand-fullscreen {
+        width: 100vw;
+        height: 100vh;
+        display: block;
+        max-width: 100% !important;
+        border: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden;
+      }
 
-          .hidden {
-            display: none !important;
-          }
+      .some-vpadding {
+        padding-top: 1em;
+        padding-bottom: 1em;
+      }
 
-          #shader-source {
-            max-width: 640px;
-            display: block;
-          }
+      .gui-container {
+        display: flex;
+        justify-content: center;
+      }
 
-          .btn {
-            background: none;
-            color: black;
-            border: 1px solid black;
-          }
+      #gui {
+        width: 100%;
+        max-width: 800px;
+      }
 
-          .invisible-textarea-trick {
-            position: absolute;
-            left: -9999px;
-          }
-        </style>
-    </head>
-    <body>
-        <div id="shader-container">
-        </div>
-        <div id="shader-source-container" class="hidden">
-          <div>
-            <textarea id="copy-to-clipboard-area" class="invisible-textarea-trick">
-            </textarea>
-            <button id="copy-to-clipboard-button" class="btn">Copy glsl-bench spec to clipboard</button>
-            <pre id="shader-source">
-            </pre>
+      .gui select {
+        width: 100%;
+      }
+
+      .gui button {
+        width: 100%;
+      }
+
+      .gui.col {
+        min-height: 2em;
+        vertical-align: center;
+        display: flex;
+      }
+
+      .gui.row {
+        padding: 3px;
+      }
+
+      .fullscreen.hide-fullscreen {
+        display: none !important;
+      }
+
+      .fullscreen.float-fullscreen {
+        position: absolute;
+        right: 0px;
+        top: 0px;
+        padding: 10px;
+        margin: 0 !important;
+        border: 0 !important;
+        width: 30%;
+        max-width: 500px;
+        background: white;
+        display: block;
+        overflow: hidden;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      #shader-source {
+        display: block;
+      }
+
+      .btn {
+        background: none;
+        color: black;
+        border: 1px solid black;
+      }
+
+      .invisible-textarea-trick {
+        position: absolute;
+        left: -9999px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container catch-fullscreen expand-fullscreen">
+      <div class="row catch-fullscreen expand-fullscreen">
+        <div class="col-md catch-fullscreen expand-fullscreen some-vpadding">
+          <div id="shader-container" class="catch-fullscreen expand-fullscreen">
           </div>
         </div>
-        <script src="build/bundle.js"></script>
-        <script>
-          const twgl = require('twgl.js');
-        </script>
-        <script src="glsl-bench/glsl_bench.js"></script>
-        <script>
-          require('app').start();
-        </script>
-    </body>
+        <div class="gui-container col-md catch-fullscreen float-fullscreen some-vpadding">
+          <div id="gui">
+          </div>
+        </div>
+      </div>
+      <div id="shader-source-container" class="hidden catch-fullscreen hide-fullscreen">
+        <div>
+          <textarea id="copy-to-clipboard-area" class="invisible-textarea-trick">
+          </textarea>
+          <pre id="shader-source">
+          </pre>
+          <button id="copy-to-clipboard-button" class="btn">Copy glsl-bench spec to clipboard</button>
+        </div>
+      </div>
+    </div>
+    <script src="build/bundle.js"></script>
+    <script>
+      const twgl = require('twgl.js');
+    </script>
+    <script src="glsl-bench/glsl_bench.js"></script>
+    <script>
+      require('app').start();
+    </script>
+  </body>
 </html>

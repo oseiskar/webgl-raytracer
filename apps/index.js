@@ -19,7 +19,9 @@ let bench;
 function render(options) {
   const element = document.getElementById('shader-container');
   const isFullScreen = options.resolution === 'fullscreen';
-  element.classList.toggle('fullscreen', isFullScreen);
+  [element, ...document.getElementsByClassName('catch-fullscreen')].forEach(el => {
+    el.classList.toggle('fullscreen', isFullScreen);
+  });
 
   let resolution;
   if (!isFullScreen) resolution = options.resolution.split('x').map(x => parseInt(x));
@@ -75,10 +77,7 @@ function render(options) {
 
   if (bench) bench.destroy();
 
-  if (options.showSource) {
-    document.getElementById('shader-source').innerHTML = spec.source;
-  }
-  document.getElementById('shader-source-container').classList.toggle('hidden', !options.showSource);
+  document.getElementById('shader-source').innerText = spec.source;
 
   document.getElementById('copy-to-clipboard-button').onclick = () => {
     const textarea = document.getElementById('copy-to-clipboard-area');
@@ -95,7 +94,7 @@ function render(options) {
 }
 
 function start() {
-  const gui = new GUI();
+  const gui = new GUI(document.getElementById('gui'));
   gui.add('resolution', '640x480', [
     '640x480',
     '800x600',
@@ -115,7 +114,9 @@ function start() {
   gui.add('dataTextures', true);
   gui.add('lightBounces', 4, [1,2,3,4,5]);
   gui.add('tentFilter', true);
-  gui.add('showSource', false);
+  gui.addIsolated('showSource', false, undefined, (options) => {
+    document.getElementById('shader-source-container').classList.toggle('hidden', !options.showSource);
+  });
   gui.addButton('stop', () => {
     if (bench) bench.stop();
   });

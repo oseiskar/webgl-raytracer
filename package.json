@@ -2,7 +2,6 @@
   "dependencies": {
     "brfs": "^2.0.1",
     "browserify": "^16.2.3",
-    "dat.gui": "^0.7.3",
     "mustache": "^3.0.1",
     "seedrandom": "^2.4.4",
     "twgl.js": "^4.5.2"
