@@ -1,17 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>WebGL raytracer examples</title>
+    <title>WebGL raytracer</title>
     <meta charset="utf-8">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
       integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
       crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Crimson+Text" rel="stylesheet">
     <style>
 
       body {
         margin: 0;
         background: gray;
         color: black;
+        font-family: 'Crimson Text', serif;
+      }
+
+      a {
+        color: black !important;
       }
 
       canvas {
@@ -49,7 +55,7 @@
 
       .some-vpadding {
         padding-top: 1em;
-        padding-bottom: 1em;
+        padding-bottom: 2em;
       }
 
       .gui-container {
@@ -112,6 +118,8 @@
 
       #shader-source {
         display: block;
+        color: black;
+        margin-top: 2em;
       }
 
       .invisible-textarea-trick {
@@ -122,6 +130,9 @@
   </head>
   <body>
     <div class="container catch-fullscreen expand-fullscreen">
+      <h1 class="catch-fullscreen hide-fullscreen">
+        <a href="https://github.com/oseiskar/webgl-raytracer">WebGL Raytracer</a>
+      </h1>
       <div class="row catch-fullscreen expand-fullscreen">
         <div class="col-md catch-fullscreen expand-fullscreen some-vpadding">
           <div id="shader-container" class="catch-fullscreen expand-fullscreen">
@@ -132,15 +143,14 @@
           </div>
         </div>
       </div>
-      <div id="shader-source-container" class="hidden catch-fullscreen hide-fullscreen">
-        <div>
-          <textarea id="copy-to-clipboard-area" class="invisible-textarea-trick">
-          </textarea>
-          <pre id="shader-source">
-          </pre>
-          <button id="copy-to-clipboard-button" class="btn">Copy glsl-bench spec to clipboard</button>
-        </div>
-      </div>
+      <div id="shader-source-container" class="hidden catch-fullscreen hide-fullscreen some-vpadding">
+        <textarea id="copy-to-clipboard-area" class="invisible-textarea-trick">
+        </textarea>
+        <h4>GLSL fragment shader source code</h4>
+        <pre id="shader-source">
+        </pre>
+        <button id="copy-to-clipboard-button" class="btn" style="margin-right: 2em">Copy glsl-bench spec to clipboard</button>
+        <a href="https://github.com/oseiskar/glsl-bench"><small>what?</small></a>
     </div>
     <script src="build/bundle.js"></script>
     <script>

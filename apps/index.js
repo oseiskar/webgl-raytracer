@@ -24,7 +24,9 @@ function render(options) {
   });
 
   let resolution;
-  if (!isFullScreen) resolution = options.resolution.split('x').map(x => parseInt(x));
+  if (!isFullScreen) {
+    resolution = options.resolution.split('x').map(x => parseInt(x));
+  }
   options.lightSampling = options.renderer.match(/bidirectional/);
   // workaround... should not be fixed in ggx
   options.maxSampleWeight = options.specular === 'ggx' ? 10.0 : 1e6;
@@ -91,17 +93,24 @@ function render(options) {
     console.log(("\n"+bench.fragmentShaderSource).split("\n"));
     throw new Error(err);
   });
+
+  // avoid unnecessary size changes
+  if (!isFullScreen) {
+    const canvas = element.getElementsByTagName('canvas')[0];
+    canvas.width = resolution[0];
+    canvas.height = resolution[1];
+  }
 }
 
 function start() {
   const gui = new GUI(document.getElementById('gui'));
+  gui.add('scene', 'Example', Object.keys(sceneBuilders));
   gui.add('resolution', '640x480', [
     '640x480',
     '800x600',
     '1024x786',
     'fullscreen'
   ]);
-  gui.add('scene', 'Example', Object.keys(sceneBuilders));
   gui.add('renderer', 'bidirectional', {
     'flat': 'random_flat_color_shader',
     'lambert': 'direct_light_diffuse_shader',
