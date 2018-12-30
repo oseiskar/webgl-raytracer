@@ -126,9 +126,31 @@ function start() {
   gui.addIsolated('showSource', false, undefined, (options) => {
     document.getElementById('shader-source-container').classList.toggle('hidden', !options.showSource);
   });
-  gui.addButton('stop', () => {
-    if (bench) bench.stop();
+
+  gui.addButton('save image', () => {
+    if (!bench) return;
+    bench.captureImage((data) => {
+      const a = document.getElementById('save-image-as');
+      a.href = data;
+      a.download = 'raytracer-output.png';
+      a.click();
+    });
   });
+
+  const stopResume = gui.addButton('stop', () => {
+    if (!bench) return;
+    if (bench.running) {
+      stopResume.innerText = 'resume';
+      stopResume.classList.remove('btn-warning');
+      bench.stop();
+    }
+    else {
+      stopResume.innerText = 'stop';
+      stopResume.classList.add('btn-warning');
+      bench.resume();
+    }
+  });
+  stopResume.classList.add('btn-warning');
   gui.onChange(render);
 }
 

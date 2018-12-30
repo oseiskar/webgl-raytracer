@@ -122,7 +122,7 @@
         margin-top: 2em;
       }
 
-      .invisible-textarea-trick {
+      .invisible-element-trick {
         position: absolute;
         left: -9999px;
       }
@@ -144,8 +144,9 @@
         </div>
       </div>
       <div id="shader-source-container" class="hidden catch-fullscreen hide-fullscreen some-vpadding">
-        <textarea id="copy-to-clipboard-area" class="invisible-textarea-trick">
+        <textarea id="copy-to-clipboard-area" class="invisible-element-trick">
         </textarea>
+        <a href="#" id="save-image-as" class="invisible-element-trick"></a>
         <h4>GLSL fragment shader source code</h4>
         <pre id="shader-source">
         </pre>
