@@ -161,6 +161,13 @@ function SceneBuilder() {
   const deg2rad = x => x / 180.0 * Math.PI;
   const toFloat = x => `float(${x})`;
 
+  // estimate of the relative expensiveness of rendering the scene
+  this.computationLoadEstimate = 1.0;
+  this.setComputationLoadEstimate = (estimate) => {
+    this.computationLoadEstimate = estimate;
+    return this;
+  };
+
   this.addObject = (surface, positionOrMatrix, material) => {
     objects.push({
       material,

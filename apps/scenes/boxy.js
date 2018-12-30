@@ -56,7 +56,8 @@ function getBuilder(shaderColorType = 'rgb') {
       target: [-0.3, 0, 0.55],
       position: [1, -4.95, 2]
     })
-    .addObject(new Sphere(0.5), [-3, -1, 2], m.light);
+    .addObject(new Sphere(0.5), [-3, -1, 2], m.light)
+    .setComputationLoadEstimate(2.0);
 
   makeBox(builder, m, [4, 5, 2.5]);
 

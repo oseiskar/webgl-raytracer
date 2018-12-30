@@ -158,7 +158,9 @@
       const twgl = require('twgl.js');
     </script>
     <script src="glsl-bench/glsl_bench.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mobile-detect/1.4.3/mobile-detect.min.js" crossorigin="anonymous"></script>
     <script>
+      const isMobileBrowser = !!(new MobileDetect(window.navigator.userAgent).mobile());
       require('app').start();
     </script>
   </body>

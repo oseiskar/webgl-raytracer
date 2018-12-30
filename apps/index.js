@@ -15,6 +15,25 @@ const sceneBuilders = {
 };
 
 let bench;
+let loadEstimate;
+
+function getLoadProfile(mode) {
+  const targetLoad = {
+    light: 0.1,
+    medium: 0.9,
+    heavy: 2.0
+  }[mode] * 2.0;
+
+  const slowdownFactor = loadEstimate / targetLoad;
+  //console.log({loadEstimate, slowdownFactor});
+
+  if (slowdownFactor <= 1) {
+    if (slowdownFactor < 0.5) return 1.0;
+    return 1.0 - (slowdownFactor - 0.5)*2;
+  }
+
+  return Math.floor(-slowdownFactor);
+}
 
 function render(options) {
   const element = document.getElementById('shader-container');
@@ -24,14 +43,21 @@ function render(options) {
   });
 
   let resolution;
+  let nPixels;
   if (!isFullScreen) {
     resolution = options.resolution.split('x').map(x => parseInt(x));
+    nPixels = resolution[0] * resolution[1];
+  } else {
+    nPixels = window.innerWidth * window.innerHeight;
   }
   options.lightSampling = options.renderer.match(/bidirectional/);
   // workaround... should not be fixed in ggx
   options.maxSampleWeight = options.specular === 'ggx' ? 10.0 : 1e6;
 
-  const { source, data } = sceneBuilders[options.scene](options.colors)
+  const sceneBuilder = sceneBuilders[options.scene](options.colors);
+  loadEstimate = sceneBuilder.computationLoadEstimate * nPixels / (640*480);
+
+  const { source, data } = sceneBuilder
     .toggleDataTextures(options.dataTextures)
     .buildScene();
 
@@ -93,6 +119,7 @@ function render(options) {
     console.log(("\n"+bench.fragmentShaderSource).split("\n"));
     throw new Error(err);
   });
+  bench.setLoadProfile(getLoadProfile(options.renderLoad));
 
   // avoid unnecessary size changes
   if (!isFullScreen) {
@@ -126,6 +153,13 @@ function start() {
   gui.addIsolated('showSource', false, undefined, (options) => {
     document.getElementById('shader-source-container').classList.toggle('hidden', !options.showSource);
   });
+  gui.addIsolated('renderLoad',
+    isMobileBrowser ? 'light' : 'medium',
+    ['light', 'medium', 'heavy'],
+    (options) => {
+      if (!bench) return;
+      bench.setLoadProfile(getLoadProfile(options.renderLoad));
+    });
 
   gui.addButton('save image', () => {
     if (!bench) return;
@@ -145,13 +179,20 @@ function start() {
       bench.stop();
     }
     else {
-      stopResume.innerText = 'stop';
-      stopResume.classList.add('btn-warning');
+      showStopButton();
       bench.resume();
     }
   });
-  stopResume.classList.add('btn-warning');
-  gui.onChange(render);
+
+  function showStopButton() {
+    stopResume.innerText = 'stop';
+    stopResume.classList.add('btn-warning');
+  }
+
+  gui.onChange((options) => {
+    showStopButton();
+    render(options);
+  });
 }
 
 module.exports = { start };

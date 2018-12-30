@@ -51,7 +51,8 @@ function getBuilder(shaderColorType = 'rgb') {
     })
     .addObject(new Dome(SKY_DISTANCE), [0,0,0], m.dome)
     .addObject(new HalfSpace([0,0,-1]), [0,0,SKY_DISTANCE*0.7], m.sky)
-    .addObject(new HalfSpace([0,0,1]), [0,0,0], m.floor);
+    .addObject(new HalfSpace([0,0,1]), [0,0,0], m.floor)
+    .setComputationLoadEstimate(5.0);
 
   function deg2rad(x) { return x / 180.0 * Math.PI; }
 
