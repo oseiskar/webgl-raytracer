@@ -1,8 +1,9 @@
+/* global document, window, GLSLBench, isMobileBrowser  */
+/* eslint-disable global-require */
+
 const Mustache = require('mustache');
 
 const preprocessor = require('../src/preprocess_helpers.js');
-const Sphere = require('../src/surfaces/sphere.js');
-const BoxInterior = require('../src/surfaces/box_interior.js');
 const randHelpers = require('../src/rand_helpers.js');
 const GUI = require('./my-gui.js');
 
@@ -45,14 +46,14 @@ function render(options) {
   let resolution;
   let nPixels;
   if (!isFullScreen) {
-    resolution = options.resolution.split('x').map(x => parseInt(x));
+    resolution = options.resolution.split('x').map(x => parseInt(x, 10));
     nPixels = resolution[0] * resolution[1];
   } else {
     nPixels = window.innerWidth * window.innerHeight;
   }
-  options.lightSampling = options.renderer.match(/bidirectional/);
+  const lightSampling = options.renderer.match(/bidirectional/);
   // workaround... should not be fixed in ggx
-  options.maxSampleWeight = options.specular === 'ggx' ? 10.0 : 1e6;
+  const maxSampleWeight = options.specular === 'ggx' ? 10.0 : 1e6;
 
   const sceneBuilder = sceneBuilders[options.scene](options.colors);
   loadEstimate = sceneBuilder.computationLoadEstimate * nPixels / (640 * 480);
@@ -61,7 +62,7 @@ function render(options) {
     .toggleDataTextures(options.dataTextures)
     .buildScene();
 
-  const nRands = parseInt(options.lightBounces) * 2 + 5;
+  const nRands = parseInt(options.lightBounces, 10) * 2 + 5;
   const randSpec = options.dataTextures
     ? randHelpers.texturesRandUniforms(nRands, nRands)
     : randHelpers.fixedVecsRandUniforms;
@@ -92,7 +93,8 @@ function render(options) {
         #define DISABLE_LIGHT_SAMPLING
         {{/lightSampling}}
         #define MAX_SAMPLE_WEIGHT float({{maxSampleWeight}})
-        `, options).split('\n').map(x => x.trim()).join('\n')
+        `, { ...options, lightSampling, maxSampleWeight })
+          .split('\n').map(x => x.trim()).join('\n')
       }
     }),
     monte_carlo: true,
@@ -118,6 +120,7 @@ function render(options) {
 
   bench = new GLSLBench({ element, spec });
   bench.onError((err) => {
+    // eslint-disable-next-line no-console
     console.log((`\n${bench.fragmentShaderSource}`).split('\n'));
     throw new Error(err);
   });
@@ -126,8 +129,7 @@ function render(options) {
   // avoid unnecessary size changes
   if (!isFullScreen) {
     const canvas = element.getElementsByTagName('canvas')[0];
-    canvas.width = resolution[0];
-    canvas.height = resolution[1];
+    [canvas.width, canvas.height] = resolution;
   }
 }
 
@@ -173,6 +175,7 @@ function start() {
     });
   });
 
+  /* eslint-disable no-use-before-define */
   const stopResume = gui.addButton('stop', () => {
     if (!bench) return;
     if (bench.running) {

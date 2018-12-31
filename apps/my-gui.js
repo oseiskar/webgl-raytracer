@@ -1,3 +1,5 @@
+/* global document  */
+
 // dat.gui-like GUI
 function GUI(el) {
   const options = {};
@@ -76,13 +78,13 @@ function GUI(el) {
 
   this.add = (name, defaultValue, opts) => addInput(name, defaultValue, opts, anyChange);
 
-  this.addIsolated = (name, defaultValue, opts, onChange) => addInput(name, defaultValue, opts, onChange);
+  this.addIsolated = (...args) => addInput(...args);
 
   this.addButton = (name, action) => {
     options[name] = action;
     // this.dat.add(options, name);
     const col = createCol();
-    btn = document.createElement('button');
+    const btn = document.createElement('button');
     col.appendChild(btn);
     btn.innerText = name;
     // Bootstrap styles

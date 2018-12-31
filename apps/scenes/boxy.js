@@ -1,5 +1,5 @@
 const seedrandom = require('seedrandom');
-const m4 = require('twgl.js').m4;
+const { m4 } = require('twgl.js');
 
 const SceneBuilder = require('../../src/scene_builder.js');
 const Plane = require('../../src/surfaces/plane.js');
@@ -64,6 +64,7 @@ function getBuilder(shaderColorType = 'rgb') {
 
   const seed = Math.round(Math.random() * 1e12);
   // const seed = 518261260800;
+  // eslint-disable-next-line no-console
   console.log(`scene generation seed: ${seed}`);
 
   const rng = seedrandom(seed); // seedrandom(5);
@@ -72,12 +73,12 @@ function getBuilder(shaderColorType = 'rgb') {
     for (let i = 0; i < 12; ++i) {
       let pos;
       if (small) {
-        pos = [1, 1, 1].map(i => rng()).map(x => x * 2.0 - 1.0);
+        pos = [1, 1, 1].map(() => rng()).map(x => x * 2.0 - 1.0);
         const j = i % 3;
         pos[j] = Math.sign(pos[j]) * (1.0 + Math.abs(pos[j]) * 0.1);
         pos = pos.map(x => x * 0.5);
       } else {
-        pos = [1, 1, 1].map(i => randnBoxMuller(rng)).map(x => x * 0.2);
+        pos = [1, 1, 1].map(() => randnBoxMuller(rng)).map(x => x * 0.2);
       }
 
       pos[2] += 0.85;

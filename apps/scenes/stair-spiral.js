@@ -1,11 +1,12 @@
 // https://github.com/oseiskar/raytracer/blob/master/scenes/scene-stairs.py
 
+const { m4 } = require('twgl.js');
+
 const SceneBuilder = require('../../src/scene_builder.js');
 const HalfSpace = require('../../src/surfaces/half_space.js');
 const Sphere = require('../../src/surfaces/sphere.js');
 const Box = require('../../src/surfaces/box.js');
 const Dome = require('../../src/surfaces/dome.js');
-const m4 = require('twgl.js').m4;
 const MaterialHelpers = require('../../src/material_helpers.js');
 
 const SKY_EMISSION = 3.0;
@@ -58,7 +59,11 @@ function getBuilder(shaderColorType = 'rgb') {
 
   let t1 = m4.translation([1, 0, 0]);
   let t2 = m4.translation([0, 1.5, 0]);
-  const dt = m => m4.multiply(m4.translate(m4.axisRotation([-0.5, -1, 3.1], deg2rad(10)), [0, 0, 0.07]), m);
+  const dt = t => m4.multiply(
+    m4.translate(
+      m4.axisRotation([-0.5, -1, 3.1], deg2rad(10)), [0, 0, 0.07]
+    ), t
+  );
 
   for (let j = 0; j < 65; ++j) {
     let material;

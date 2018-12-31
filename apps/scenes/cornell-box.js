@@ -2,7 +2,7 @@
 // ... kind of, the objects are not exactly the corret size or in the correct
 // positions. The lighting (here rgb-based) is not correct either
 
-const m4 = require('twgl.js').m4;
+const { m4 } = require('twgl.js');
 
 const SceneBuilder = require('../../src/scene_builder.js');
 const Plane = require('../../src/surfaces/plane.js');
