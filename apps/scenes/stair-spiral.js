@@ -13,11 +13,11 @@ const STAIR_EMISSION = 5.0;
 
 const materials = {
   dome: {
-    diffuse: [0,0,0]
+    diffuse: [0, 0, 0]
   },
   sky: {
-    diffuse: [0,0,0],
-    emission: [0.5, 0.5, 0.7].map(x => x*SKY_EMISSION)
+    diffuse: [0, 0, 0],
+    emission: [0.5, 0.5, 0.7].map(x => x * SKY_EMISSION)
   },
   red: {
     reflectivity: 0.1,
@@ -33,7 +33,7 @@ const materials = {
     ior: 1.5
   },
   light: {
-    emission: [1.0, 0.8, 0.6].map(x => x*STAIR_EMISSION)
+    emission: [1.0, 0.8, 0.6].map(x => x * STAIR_EMISSION)
   }
 };
 
@@ -49,25 +49,22 @@ function getBuilder(shaderColorType = 'rgb') {
       target: [-0.5, 0, 1.5],
       distance: 7.5
     })
-    .addObject(new Dome(SKY_DISTANCE), [0,0,0], m.dome)
-    .addObject(new HalfSpace([0,0,-1]), [0,0,SKY_DISTANCE*0.7], m.sky)
-    .addObject(new HalfSpace([0,0,1]), [0,0,0], m.floor)
+    .addObject(new Dome(SKY_DISTANCE), [0, 0, 0], m.dome)
+    .addObject(new HalfSpace([0, 0, -1]), [0, 0, SKY_DISTANCE * 0.7], m.sky)
+    .addObject(new HalfSpace([0, 0, 1]), [0, 0, 0], m.floor)
     .setComputationLoadEstimate(5.0);
 
   function deg2rad(x) { return x / 180.0 * Math.PI; }
 
-  let t1 = m4.translation([1,0,0]);
-  let t2 = m4.translation([0,1.5,0]);
-  const dt = m => m4.multiply(m4.translate(m4.axisRotation([-0.5,-1,3.1], deg2rad(10)), [0,0,0.07]), m);
+  let t1 = m4.translation([1, 0, 0]);
+  let t2 = m4.translation([0, 1.5, 0]);
+  const dt = m => m4.multiply(m4.translate(m4.axisRotation([-0.5, -1, 3.1], deg2rad(10)), [0, 0, 0.07]), m);
 
-  for (let j=0; j<65; ++j) {
+  for (let j = 0; j < 65; ++j) {
     let material;
-    if (j % 16 === 8)
-      material = 'light';
-    else if (j % 16 === 0)
-      material = 'red';
-    else
-      material = 'glass';
+    if (j % 16 === 8) material = 'light';
+    else if (j % 16 === 0) material = 'red';
+    else material = 'glass';
 
     sceneBuilder.addObject(new Box(0.5, 0.2, 0.02), t1, m[material]);
     sceneBuilder.addObject(new Sphere(0.1), t2, m.red);

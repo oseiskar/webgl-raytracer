@@ -7,10 +7,10 @@ const randHelpers = require('../src/rand_helpers.js');
 const GUI = require('./my-gui.js');
 
 const sceneBuilders = {
-  'Example': require('./scenes/example.js'),
+  Example: require('./scenes/example.js'),
   'Cornell Box': require('./scenes/cornell-box.js'),
-  'Window': require('./scenes/window.js'),
-  'Boxy': require('./scenes/boxy.js'),
+  Window: require('./scenes/window.js'),
+  Boxy: require('./scenes/boxy.js'),
   'Stair Spiral': require('./scenes/stair-spiral.js')
 };
 
@@ -25,11 +25,11 @@ function getLoadProfile(mode) {
   }[mode] * 2.0;
 
   const slowdownFactor = loadEstimate / targetLoad;
-  //console.log({loadEstimate, slowdownFactor});
+  // console.log({loadEstimate, slowdownFactor});
 
   if (slowdownFactor <= 1) {
     if (slowdownFactor < 0.5) return 1.0;
-    return 1.0 - (slowdownFactor - 0.5)*2;
+    return 1.0 - (slowdownFactor - 0.5) * 2;
   }
 
   return Math.floor(-slowdownFactor);
@@ -38,7 +38,7 @@ function getLoadProfile(mode) {
 function render(options) {
   const element = document.getElementById('shader-container');
   const isFullScreen = options.resolution === 'fullscreen';
-  [element, ...document.getElementsByClassName('catch-fullscreen')].forEach(el => {
+  [element, ...document.getElementsByClassName('catch-fullscreen')].forEach((el) => {
     el.classList.toggle('fullscreen', isFullScreen);
   });
 
@@ -55,16 +55,16 @@ function render(options) {
   options.maxSampleWeight = options.specular === 'ggx' ? 10.0 : 1e6;
 
   const sceneBuilder = sceneBuilders[options.scene](options.colors);
-  loadEstimate = sceneBuilder.computationLoadEstimate * nPixels / (640*480);
+  loadEstimate = sceneBuilder.computationLoadEstimate * nPixels / (640 * 480);
 
   const { source, data } = sceneBuilder
     .toggleDataTextures(options.dataTextures)
     .buildScene();
 
-  const nRands = parseInt(options.lightBounces)*2 + 5;
-  const randSpec = options.dataTextures ?
-    randHelpers.texturesRandUniforms(nRands, nRands) :
-    randHelpers.fixedVecsRandUniforms;
+  const nRands = parseInt(options.lightBounces) * 2 + 5;
+  const randSpec = options.dataTextures
+    ? randHelpers.texturesRandUniforms(nRands, nRands)
+    : randHelpers.fixedVecsRandUniforms;
 
   const spec = {
     resolution,
@@ -74,14 +74,16 @@ function render(options) {
       },
       scene: { source },
       camera: { file: `camera/${options.camera}.glsl` },
-      rand: { file: options.dataTextures ?
-        'rand/textures.glsl' :
-        'rand/fixed_vecs.glsl'
+      rand: {
+        file: options.dataTextures
+          ? 'rand/textures.glsl'
+          : 'rand/fixed_vecs.glsl'
       },
       shading: {
         file: `shading/${options.specular}.glsl`
       },
-      parameters: { source: Mustache.render(`
+      parameters: {
+        source: Mustache.render(`
         #define N_BOUNCES {{lightBounces}}
         {{^tentFilter}}
         #define ENABLE_TENT_FILTER 0
@@ -116,7 +118,7 @@ function render(options) {
 
   bench = new GLSLBench({ element, spec });
   bench.onError((err) => {
-    console.log(("\n"+bench.fragmentShaderSource).split("\n"));
+    console.log((`\n${bench.fragmentShaderSource}`).split('\n'));
     throw new Error(err);
   });
   bench.setLoadProfile(getLoadProfile(options.renderLoad));
@@ -139,16 +141,16 @@ function start() {
     'fullscreen'
   ]);
   gui.add('renderer', 'bidirectional', {
-    'flat': 'random_flat_color_shader',
-    'lambert': 'direct_light_diffuse_shader',
+    flat: 'random_flat_color_shader',
+    lambert: 'direct_light_diffuse_shader',
     'path tracer': 'pathtracer',
-    'bidirectional': 'bidirectional_tracer_1_light_vertex'
+    bidirectional: 'bidirectional_tracer_1_light_vertex'
   });
   gui.add('colors', 'rgb', ['grayscale', 'rgb']);
   gui.add('specular', 'ggx', ['simple', 'ggx']);
   gui.add('camera', 'pinhole', ['pinhole', 'thin_lens']);
   gui.add('dataTextures', true);
-  gui.add('lightBounces', 4, [1,2,3,4,5]);
+  gui.add('lightBounces', 4, [1, 2, 3, 4, 5]);
   gui.add('tentFilter', true);
   gui.addIsolated('showSource', false, undefined, (options) => {
     document.getElementById('shader-source-container').classList.toggle('hidden', !options.showSource);
@@ -177,8 +179,7 @@ function start() {
       stopResume.innerText = 'resume';
       stopResume.classList.remove('btn-warning');
       bench.stop();
-    }
-    else {
+    } else {
       showStopButton();
       bench.resume();
     }

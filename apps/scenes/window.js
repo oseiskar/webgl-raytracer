@@ -7,14 +7,14 @@ const MaterialHelpers = require('../../src/material_helpers.js');
 
 const materials = {
   light: {
-    emission: [1.0, 1.0, 0.9].map(x => x*1000),
+    emission: [1.0, 1.0, 0.9].map(x => x * 1000)
   },
   skyTop: {
-    diffuse: [0,0,0],
-    emission: [0.5, 0.5, 0.55].map(x => x*1.7)
+    diffuse: [0, 0, 0],
+    emission: [0.5, 0.5, 0.55].map(x => x * 1.7)
   },
   skyHorizon: {
-    diffuse: [0.7,0.7,1.0].map(x => x*0.2)
+    diffuse: [0.7, 0.7, 1.0].map(x => x * 0.2)
   },
   walls: {
     diffuse: 0.8
@@ -57,27 +57,33 @@ function getBuilder(shaderColorType = 'rgb') {
     builder
       .addObject(
         new Box(thickness, sideWidth / 2.0, room.zDim / 2.0),
-        [room.xDim / 2.0, sideY, room.zDim / 2.0], m.walls)
+        [room.xDim / 2.0, sideY, room.zDim / 2.0], m.walls
+      )
       .addObject(
         new Box(thickness, sideWidth / 2.0, room.zDim / 2.0),
-        [room.xDim / 2.0, -sideY, room.zDim / 2.0], m.walls)
+        [room.xDim / 2.0, -sideY, room.zDim / 2.0], m.walls
+      )
       .addObject(
         new Box(thickness, window.width / 2.0, window.z0 / 2.0),
-        [room.xDim / 2.0, 0.0, window.z0 / 2.0], m.walls)
+        [room.xDim / 2.0, 0.0, window.z0 / 2.0], m.walls
+      )
       .addObject(
-        new Box(thickness, window.width / 2.0,windowTopHeight / 2.0),
-        [room.xDim / 2.0, 0.0, room.zDim - windowTopHeight / 2.0], m.walls);
+        new Box(thickness, window.width / 2.0, windowTopHeight / 2.0),
+        [room.xDim / 2.0, 0.0, room.zDim - windowTopHeight / 2.0], m.walls
+      );
 
     // other walls
     builder
       .addObject(
         new Box(thickness, room.yDim / 2.0, room.zDim / 2.0),
-        [-room.xDim / 2.0, 0.0, room.zDim / 2.0], m.walls)
+        [-room.xDim / 2.0, 0.0, room.zDim / 2.0], m.walls
+      )
       .addObject(
         new Box(room.yDim / 2.0, thickness, room.zDim / 2.0),
-        [0.0, room.yDim / 2.0, room.zDim / 2.0], m.walls);
+        [0.0, room.yDim / 2.0, room.zDim / 2.0], m.walls
+      );
 
-    /*builder
+    /* builder
       .addObject(
         new Box(room.yDim / 2.0, thickness, room.zDim / 2.0),
         [0.0, -room.yDim / 2.0, room.zDim / 2.0], m.walls);
@@ -92,7 +98,7 @@ function getBuilder(shaderColorType = 'rgb') {
     builder
       .addObject(
         new Box(room.xDim / 2.0, room.yDim / 2.0, thickness),
-          [0.0, 0.0, 0.0], m.floor);*/
+          [0.0, 0.0, 0.0], m.floor); */
 
     return builder;
   }
@@ -106,14 +112,14 @@ function getBuilder(shaderColorType = 'rgb') {
       target: [1.2, 0.0, 1.2],
       distance: 3.4
     })
-    .addObject(new Dome(100.0), [0,0,0], m.skyHorizon)
-    .addObject(new Plane([0,0,-1]), [0,0,60], m.skyTop)
+    .addObject(new Dome(100.0), [0, 0, 0], m.skyHorizon)
+    .addObject(new Plane([0, 0, -1]), [0, 0, 60], m.skyTop)
     .addObject(new Sphere(1.0), [30, -8.0, 20], m.light)
     .addObject(new Sphere(0.3), [0.8, 0.6, 0.0], m.sculpture)
     .addObject(new Sphere(0.25), [0.8, 0.6, 0.5], m.sculpture)
     .addObject(new Sphere(0.2), [0.8, 0.6, 1.0], m.sculpture)
     .addObject(new Sphere(0.1), [0.8, 0.6, 1.5], m.sculpture)
-    .addObject(new Plane([0,0,1]), [0,0,0], m.ground);
+    .addObject(new Plane([0, 0, 1]), [0, 0, 0], m.ground);
 
   buildRoom(builder);
 

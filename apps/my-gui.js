@@ -48,14 +48,14 @@ function GUI(el) {
       let obj;
       if (Array.isArray(opts)) {
         obj = {};
-        opts.forEach(e => {
+        opts.forEach((e) => {
           obj[e] = e;
         });
       } else {
         obj = { ...opts };
       }
       input = document.createElement('select');
-      Object.keys(obj).forEach(key => {
+      Object.keys(obj).forEach((key) => {
         const option = document.createElement('option');
         option.value = obj[key];
         option.innerText = key;
@@ -74,17 +74,13 @@ function GUI(el) {
     return input;
   }
 
-  this.add = (name, defaultValue, opts) => {
-    return addInput(name, defaultValue, opts, anyChange);
-  };
+  this.add = (name, defaultValue, opts) => addInput(name, defaultValue, opts, anyChange);
 
-  this.addIsolated = (name, defaultValue, opts, onChange) => {
-    return addInput(name, defaultValue, opts, onChange);
-  };
+  this.addIsolated = (name, defaultValue, opts, onChange) => addInput(name, defaultValue, opts, onChange);
 
   this.addButton = (name, action) => {
     options[name] = action;
-    //this.dat.add(options, name);
+    // this.dat.add(options, name);
     const col = createCol();
     btn = document.createElement('button');
     col.appendChild(btn);

@@ -16,6 +16,6 @@
     "build": "./build.sh && npm run browserify",
     "browserify": "browserify -r twgl.js -t brfs -r ./apps/index.js:app -o build/bundle.js",
     "watch": "watchify -r twgl.js -t brfs -r ./apps/index.js:app -o build/bundle.js",
-    "lint": "./node_modules/.bin/eslint src/"
+    "lint": "./node_modules/.bin/eslint src/ apps/"
   }
 }

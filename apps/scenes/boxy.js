@@ -9,7 +9,7 @@ const MaterialHelpers = require('../../src/material_helpers.js');
 
 const materials = {
   light: {
-    emission: [1.0, 1.0, 0.9].map(x => x*40),
+    emission: [1.0, 1.0, 0.9].map(x => x * 40)
   },
   walls: {
     diffuse: 0.8
@@ -31,19 +31,20 @@ const materials = {
 
 function makeBox(builder, mat, dims) {
   return builder
-    .addObject(new Plane([1, 0, 0]), [-dims[0],0,0], mat.walls)
-    .addObject(new Plane([-1, 0, 0]), [dims[0],0,0], mat.walls)
-    .addObject(new Plane([0, 1, 0]), [0,-dims[1],0], mat.walls)
-    .addObject(new Plane([0, -1, 0]), [0,dims[1],0], mat.walls)
-    .addObject(new Plane([0, 0, 1]), [0,0,0], mat.floor)
-    .addObject(new Plane([0, 0, -1]), [0,0,dims[2]*2], mat.ceiling);
+    .addObject(new Plane([1, 0, 0]), [-dims[0], 0, 0], mat.walls)
+    .addObject(new Plane([-1, 0, 0]), [dims[0], 0, 0], mat.walls)
+    .addObject(new Plane([0, 1, 0]), [0, -dims[1], 0], mat.walls)
+    .addObject(new Plane([0, -1, 0]), [0, dims[1], 0], mat.walls)
+    .addObject(new Plane([0, 0, 1]), [0, 0, 0], mat.floor)
+    .addObject(new Plane([0, 0, -1]), [0, 0, dims[2] * 2], mat.ceiling);
 }
 
 function randnBoxMuller(rng) {
-  let u = 0, v = 0;
+  let u = 0; let
+    v = 0;
   while (u === 0) u = rng(); // Converting [0,1) to (0,1)
   while (v === 0) v = rng();
-  return Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v );
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
 }
 
 function getBuilder(shaderColorType = 'rgb') {
@@ -62,29 +63,29 @@ function getBuilder(shaderColorType = 'rgb') {
   makeBox(builder, m, [4, 5, 2.5]);
 
   const seed = Math.round(Math.random() * 1e12);
-  //const seed = 518261260800;
+  // const seed = 518261260800;
   console.log(`scene generation seed: ${seed}`);
 
-  const rng = seedrandom(seed); //seedrandom(5);
+  const rng = seedrandom(seed); // seedrandom(5);
 
-  [false, true].forEach(small => {
+  [false, true].forEach((small) => {
     for (let i = 0; i < 12; ++i) {
       let pos;
       if (small) {
-        pos = [1,1,1].map(i => { return rng(); }).map(x => x*2.0 - 1.0);
+        pos = [1, 1, 1].map(i => rng()).map(x => x * 2.0 - 1.0);
         const j = i % 3;
-        pos[j] = Math.sign(pos[j]) * (1.0 + Math.abs(pos[j])*0.1);
-        pos = pos.map(x => x*0.5);
+        pos[j] = Math.sign(pos[j]) * (1.0 + Math.abs(pos[j]) * 0.1);
+        pos = pos.map(x => x * 0.5);
       } else {
-        pos = [1,1,1].map(i => { return randnBoxMuller(rng); }).map(x => x*0.2);
+        pos = [1, 1, 1].map(i => randnBoxMuller(rng)).map(x => x * 0.2);
       }
 
       pos[2] += 0.85;
 
       let side = 0.5;
-      if (small) side = rng()*0.3+0.05;
+      if (small) side = rng() * 0.3 + 0.05;
 
-      let rotAx = [1,1,1+randnBoxMuller(rng)*0.1];
+      const rotAx = [1, 1, 1 + randnBoxMuller(rng) * 0.1];
       if (i % 2 === 0) rotAx[1] = 0.5;
 
       builder.addObject(
