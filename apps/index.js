@@ -110,6 +110,10 @@ function render(options) {
   if (bench) bench.destroy();
 
   document.getElementById('shader-source').innerText = spec.source;
+  document.getElementById('glsl-uniforms').innerText =
+    JSON.stringify(spec.uniforms, null, 2)
+      .replace(/\n          /g, '')
+      .replace(/\n        \]/g, ']');
 
   document.getElementById('copy-to-clipboard-button').onclick = () => {
     const textarea = document.getElementById('copy-to-clipboard-area');

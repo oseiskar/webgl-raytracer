@@ -120,7 +120,7 @@
         display: none !important;
       }
 
-      #shader-source {
+      pre {
         display: block;
         color: black;
         margin-top: 2em;
@@ -154,8 +154,11 @@
         <h4>GLSL fragment shader source code</h4>
         <pre id="shader-source">
         </pre>
-        <button id="copy-to-clipboard-button" class="btn" style="margin-right: 2em">Copy glsl-bench spec to clipboard</button>
-        <a href="https://github.com/oseiskar/glsl-bench"><small>what?</small></a>
+        <h4>Data</h4>
+        <pre id="glsl-uniforms">
+        </pre>
+        <button id="copy-to-clipboard-button" class="btn" style="margin-right: 2em">Copy spec to clipboard</button>
+        <a href="https://github.com/oseiskar/glsl-bench"><small>what spec?</small></a>
     </div>
     <script src="build/bundle.js"></script>
     <script>
