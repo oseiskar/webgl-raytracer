@@ -4,6 +4,13 @@ vec4 box_intersection(vec3 pos, vec3 ray, bool inside, vec3 box_size) {
     vec3 corner = pos + s*box_size*sign(ray); // - box_center; <-- assumed to be 0
     vec3 dists = -corner / ray;
 
+    // handle corner cases (especially with orthogonal cameras)
+    float no_isec_dist = -1.0;
+    if (inside) no_isec_dist = 1e10;
+    if (ray.x == 0.0) dists.x = no_isec_dist;
+    if (ray.y == 0.0) dists.y = no_isec_dist;
+    if (ray.z == 0.0) dists.z = no_isec_dist;
+
     float dist;
     if (inside) {
       dist = min(dists.x, min(dists.y, dists.z));

@@ -154,7 +154,7 @@ function start() {
   });
   gui.add('colors', 'rgb', ['grayscale', 'rgb']);
   gui.add('specular', 'ggx', ['simple', 'ggx']);
-  gui.add('camera', 'pinhole', ['pinhole', 'thin_lens']);
+  gui.add('camera', 'pinhole', ['pinhole', 'thin_lens', 'orthographic']);
   gui.add('dataTextures', true);
   gui.add('lightBounces', 4, [1, 2, 3, 4, 5]);
   gui.add('tentFilter', true);

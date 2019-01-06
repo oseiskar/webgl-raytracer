@@ -35,7 +35,8 @@ everything not related to "worlds with two triangles".
  - [x] 1-light-vertex [bidirectional path tracer](https://graphics.stanford.edu/courses/cs348b-03/papers/veach-chapter10.pdf)
  - [x] [GGX microfacet model](https://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf)
    for specular highlights
- - [x] [thin-lens](http://www.pbr-book.org/3ed-2018/Camera_Models/Projective_Camera_Models.html#TheThinLensModelandDepthofField) and pinhole camera models
+ - [x] [thin-lens](http://www.pbr-book.org/3ed-2018/Camera_Models/Projective_Camera_Models.html#TheThinLensModelandDepthofField),
+   pinhole and orthographic camera models
  - [x] tent [reconstruction filter](https://imgur.com/a/jksVw)
 
 ### To-do list
