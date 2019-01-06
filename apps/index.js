@@ -12,7 +12,8 @@ const sceneBuilders = {
   'Cornell Box': require('./scenes/cornell-box.js'),
   Window: require('./scenes/window.js'),
   Boxy: require('./scenes/boxy.js'),
-  'Stair Spiral': require('./scenes/stair-spiral.js')
+  'Stair Spiral': require('./scenes/stair-spiral.js'),
+  'Github Avatar': require('./scenes/avatar.js')
 };
 
 let bench;
