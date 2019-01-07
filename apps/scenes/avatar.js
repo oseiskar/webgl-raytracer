@@ -26,7 +26,7 @@ const materials = {
     ior: 1.5
   },
   floor: {
-    diffuse: [0.8, 0.8, 0.8]
+    diffuse: [1,1,1].map(x => x*0.915)
   }
 };
 
