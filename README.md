@@ -8,7 +8,7 @@ shared pieces of GLSL fragment shader code. Different combination of rendering
 methods, material models, cameras and data structures may be used.
 
 Utilizes my [glsl-bench](https://github.com/oseiskar/glsl-bench) library
-(included as a submodule) & TWGL for the WebGL oilerplate, for example,
+(included as a submodule) & TWGL for the WebGL boilerplate, for example,
 everything not related to "worlds with two triangles".
 
 ![img](https://oseiskar.github.io/img/webgl-raytracer.png)
