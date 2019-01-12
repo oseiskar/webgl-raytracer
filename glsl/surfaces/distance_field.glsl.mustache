@@ -1,0 +1,58 @@
+
+float distance_field_func_{{distanceFieldId}}(vec3 p) {
+  {{{distanceFunctionCode}}}
+}
+
+vec3 distance_field_gradient_{{distanceFieldId}}(vec3 pos) {
+  const float eps = float({{gradientDelta}});
+  const vec3 dx = vec3(eps,0,0);
+  const vec3 dy = vec3(0,eps,0);
+  const vec3 dz = vec3(0,0,eps);
+  const float h = 0.5 / eps;
+
+  return vec3(
+    (distance_field_func_{{distanceFieldId}}(pos + dx) - distance_field_func_{{distanceFieldId}}(pos - dx)) * h,
+    (distance_field_func_{{distanceFieldId}}(pos + dy) - distance_field_func_{{distanceFieldId}}(pos - dy)) * h,
+    (distance_field_func_{{distanceFieldId}}(pos + dz) - distance_field_func_{{distanceFieldId}}(pos - dz)) * h
+  );
+}
+
+vec4 distance_field_intersection_{{distanceFieldId}}(vec3 pos, vec3 ray, bool is_inside, bool prev_self) {
+  const vec4 NO_INTERSECTION = vec4(0.0, 0.0, 0.0, -1.0);
+  const float distanceThreshold = float({{distanceThreshold}});
+  const float maxStepSize = float({{maxStepSize}});
+
+  {{#convex}}
+  if (!is_inside && prev_self) return NO_INTERSECTION;
+  {{/convex}}
+
+  float fieldSign = is_inside ? -1.0 : 1.0;
+  float totalDist = 0.0;
+
+  for (int i = 0; i < {{maxSteps}}; ++i) {
+    vec3 curPos = pos + ray*totalDist;
+    float dist = distance_field_func_{{distanceFieldId}}(curPos) * fieldSign;
+
+    if (dist > float({{escapeDistance}})) {
+      return NO_INTERSECTION;
+    }
+    if (dist < distanceThreshold) {
+      vec3 gradient = distance_field_gradient_{{distanceFieldId}}(curPos);
+
+      if (!prev_self || dot(gradient, ray)*fieldSign < 0.0) {
+        return vec4(normalize(gradient), totalDist);
+      }
+    }
+
+    if (dist < distanceThreshold) {
+      dist = distanceThreshold;
+    }
+
+    if (dist > maxStepSize) {
+      dist = maxStepSize;
+    }
+    totalDist += dist;
+  }
+
+  return NO_INTERSECTION;
+}

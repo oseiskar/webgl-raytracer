@@ -3,6 +3,7 @@ const Sphere = require('../../src/surfaces/sphere.js');
 const Plane = require('../../src/surfaces/plane.js');
 const Box = require('../../src/surfaces/box.js');
 const Dome = require('../../src/surfaces/dome.js');
+const DistanceField = require('../../src/surfaces/distance_field.js');
 const MaterialHelpers = require('../../src/material_helpers.js');
 
 const materials = {
@@ -115,11 +116,12 @@ function getBuilder(shaderColorType = 'rgb') {
     .addObject(new Dome(100.0), [0, 0, 0], m.skyHorizon)
     .addObject(new Plane([0, 0, -1]), [0, 0, 60], m.skyTop)
     .addObject(new Sphere(1.0), [30, -8.0, 20], m.light)
-    .addObject(new Sphere(0.3), [0.8, 0.6, 0.0], m.sculpture)
-    .addObject(new Sphere(0.25), [0.8, 0.6, 0.5], m.sculpture)
-    .addObject(new Sphere(0.2), [0.8, 0.6, 1.0], m.sculpture)
-    .addObject(new Sphere(0.1), [0.8, 0.6, 1.5], m.sculpture)
-    .addObject(new Plane([0, 0, 1]), [0, 0, 0], m.ground);
+    .addObject(new DistanceField(
+      'return (length(vec3(p.x,p.y,p.z*0.3)) + (sin(p.x*30.0) + cos(p.y * 25.0) + sin(p.z * 25.0)) * 0.1 - 0.2) * 0.2;',
+      { escapeDistance: 2, maxSteps: 100 }
+    ), [0.8, 0.6, 0.0], m.sculpture)
+    .addObject(new Plane([0, 0, 1]), [0, 0, 0], m.ground)
+    .setComputationLoadEstimate(1.5);
 
   buildRoom(builder);
 

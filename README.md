@@ -32,6 +32,7 @@ everything not related to "worlds with two triangles".
 
  - [x] reflection, refraction, fresnel... the usual stuff
  - [x] some basic surface types: box, sphere, plane
+ - [x] distance fields
  - [x] 1-light-vertex [bidirectional path tracer](https://graphics.stanford.edu/courses/cs348b-03/papers/veach-chapter10.pdf)
  - [x] [GGX microfacet model](https://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf)
    for specular highlights
@@ -46,8 +47,7 @@ everything not related to "worlds with two triangles".
  - [ ] cylinders and cones
  - [ ] constructive solid geometry
  - [ ] triangle meshes & octrees
- - [ ] distance fields
- - [ ] implicit surfaces
+ - [ ] interval arithmetic implicit surfaces
  - [ ] material textures
  - [ ] spectral color model (enables dispersion)
  - [ ] Airy disc reconstruction filter (blurs highlights)
