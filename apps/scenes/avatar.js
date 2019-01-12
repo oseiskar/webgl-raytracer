@@ -5,7 +5,7 @@ const Dome = require('../../src/surfaces/dome.js');
 const MaterialHelpers = require('../../src/material_helpers.js');
 
 const SKY_EMISSION = 2.0;
-const COLOR = [97,212,207].map(x => x/255);
+const COLOR = [97, 212, 207].map(x => x / 255);
 
 const materials = {
   dome: {
@@ -26,7 +26,7 @@ const materials = {
     ior: 1.5
   },
   floor: {
-    diffuse: [1,1,1].map(x => x*0.915)
+    diffuse: [1, 1, 1].map(x => x * 0.915)
   }
 };
 
@@ -41,7 +41,7 @@ function getBuilder(shaderColorType = 'rgb') {
       pitch: -50,
       target: [-0.6, 0.2, 0.5],
       distance: 6,
-      apertureSize: 0.2,
+      apertureSize: 0.2
     })
     .addObject(new Dome(SKY_DISTANCE), [0, 0, 0], m.dome)
     .addObject(new HalfSpace([0, 0, -1]), [0, 0, SKY_DISTANCE * 0.7], m.sky)
@@ -49,17 +49,17 @@ function getBuilder(shaderColorType = 'rgb') {
 
   function buildAvatar(builder, mat) {
     [
-      [0,0],
-      [-2,-1],
-      [-1,-2],
-      [2,-1],
-      [1,-2],
-      [-2,2],
-      [-1,2],
-      [1,2],
-      [2,2]
-    ].forEach(([x,y]) => {
-      builder.addObject(new Box(0.5,0.5,0.5), [y,-x,0.5], mat);
+      [0, 0],
+      [-2, -1],
+      [-1, -2],
+      [2, -1],
+      [1, -2],
+      [-2, 2],
+      [-1, 2],
+      [1, 2],
+      [2, 2]
+    ].forEach(([x, y]) => {
+      builder.addObject(new Box(0.5, 0.5, 0.5), [y, -x, 0.5], mat);
     });
     return builder;
   }

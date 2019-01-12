@@ -1,11 +1,11 @@
-const tracerData = require('../../glsl/index.js');
 const Mustache = require('mustache');
+const tracerData = require('../../glsl/index.js');
+
 const tracerTemplate = tracerData.surfaces['distance_field.glsl.mustache'];
 
 let distanceFieldId = 0;
 
 function DistanceField(distanceFunction, options = {}) {
-
   distanceFieldId++;
 
   const finalOptions = Object.assign({
