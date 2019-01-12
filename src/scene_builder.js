@@ -262,8 +262,8 @@ function SceneBuilder() {
         rotationList: obj.rotation && obj.rotation.join(','),
         convex: !obj.nonConvex,
         noInside: !!obj.noInside,
-        parameterListLeadingComma: ([''].concat(obj.parameters)).join(', '),
-        parameterList: obj.parameters.join(', ')
+        parameterListLeadingComma: ([''].concat(obj.parameters || [])).join(', '),
+        parameterList: (obj.parameters || []).join(', ')
       };
       objectViews.push(objectView);
       objectsPerTracer[tracer.name].push(objectView);
@@ -306,10 +306,11 @@ function SceneBuilder() {
           geometryData.rotation[1].push([r[3], r[4], r[5], 0]);
           geometryData.rotation[2].push([r[6], r[7], r[8], 0]);
 
+          let params = [];
           if (obj.parameters) {
             uniqTracer.parameterListLeadingComma = `, ${obj.parametersFromVec4Code}`;
+            params = obj.parametersAsList();
           }
-          const params = obj.parametersAsList();
           while (params.length < 4) params.push(0);
           geometryData.parameter[0].push(params);
         }
