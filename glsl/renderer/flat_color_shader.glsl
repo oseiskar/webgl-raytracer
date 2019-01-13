@@ -23,10 +23,11 @@ vec3 render(vec2 xy, vec2 resolution) {
         return vec3(0.0, 0.0, 0.0);
     } else {
         int material_id = get_material_id(which_object);
+        ray_pos += intersection.w * ray;
         vec3 emission;
-        if (get_emission(material_id, emission)) {
+        if (get_emission(material_id, ray_pos, emission)) {
             return emission * white;
         }
-        return get_diffuse(material_id) * white;
+        return get_diffuse(material_id, ray_pos) * white;
     }
 }

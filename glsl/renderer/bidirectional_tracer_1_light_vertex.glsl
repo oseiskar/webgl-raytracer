@@ -76,7 +76,7 @@ vec3 render(vec2 xy, vec2 resolution) {
     int light_object = select_light(light_point, light_normal, light_sample_area_probability, rng);
     color_type light_emission;
 
-    get_emission(get_material_id(light_object), light_emission);
+    get_emission(get_material_id(light_object), light_point, light_emission);
     color_type color;
 
     float choice_sample = rand_next_uniform(rng);
@@ -92,7 +92,7 @@ vec3 render(vec2 xy, vec2 resolution) {
             ray_pos += intersection.w * ray;
             int material_id = get_material_id(which_object);
 
-            if (get_emission(material_id, color)) {
+            if (get_emission(material_id, ray_pos, color)) {
                 float change_of_variables = -dot(normal, ray) / (intersection.w*intersection.w);
                 float probThis, probOther;
 
@@ -112,7 +112,7 @@ vec3 render(vec2 xy, vec2 resolution) {
             }
 
             vec3 ray_in = ray;
-            last_sampling_prob = sample_ray_and_prob(material_id, going_out, normal, ray, color, rng);
+            last_sampling_prob = sample_ray_and_prob(material_id, going_out, ray_pos, normal, ray, color, rng);
             float cur_sample_weight = color2prob(color)*(ray_color.x + ray_color.y + ray_color.z) / 3.0;
             if (last_sampling_prob == 0.0 || cur_sample_weight > MAX_SAMPLE_WEIGHT) break;
 
@@ -126,13 +126,13 @@ vec3 render(vec2 xy, vec2 resolution) {
                     float change_of_variables = -dot(light_normal, shadow_ray) / (shadow_dist*shadow_dist);
 
                     // = dot(normal, shadow_ray) / M_PI
-                    float prob_sampling = sampling_pdf(material_id, going_out, normal, ray_in, shadow_ray);
+                    float prob_sampling = sampling_pdf(material_id, going_out, ray_pos, normal, ray_in, shadow_ray);
 
                     // multiple importance sampling probabilities of different strategies
                     float probThis = light_sample_area_probability;
                     float probOther = change_of_variables * prob_sampling;
 
-                    color_type contribution = brdf_cos_weighted(material_id, going_out, normal, ray_in, shadow_ray);
+                    color_type contribution = brdf_cos_weighted(material_id, going_out, ray_pos, normal, ray_in, shadow_ray);
                     color_type f_over_p = contribution * change_of_variables / probThis;
                     result_color += ray_color * light_emission * f_over_p * weight2(probThis, probOther);
                 }

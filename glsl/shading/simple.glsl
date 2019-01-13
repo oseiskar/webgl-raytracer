@@ -12,9 +12,9 @@ bool color_prob_choice(color_type color, out color_type out_color, inout float c
     return false;
 }
 
-bool sample_specular(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
+bool sample_specular(int material_id, bool going_out, vec3 pos, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
     float choice_sample = rand_next_uniform(rng);
-    float roughness = get_roughness(material_id);
+    float roughness = get_roughness(material_id, pos);
 
     vec3 n = normal;
 
@@ -24,7 +24,7 @@ bool sample_specular(int material_id, bool going_out, vec3 normal, inout vec3 ra
         n = normalize(n + rand_next_gauss3(rng)*roughness);
     }
 
-    if (color_prob_choice(get_reflectivity(material_id), weight, choice_sample)) {
+    if (color_prob_choice(get_reflectivity(material_id, pos), weight, choice_sample)) {
         // full reflection
         ray = ray - 2.0*dot(n, ray)*n;
 
@@ -33,9 +33,9 @@ bool sample_specular(int material_id, bool going_out, vec3 normal, inout vec3 ra
         if (dot(ray, normal) < 0.0) return false;
         return true;
     }
-    if (color_prob_choice(get_transparency(material_id), weight, choice_sample)) {
+    if (color_prob_choice(get_transparency(material_id, pos), weight, choice_sample)) {
         // refraction
-        float eta = 1.0 / get_ior(material_id);
+        float eta = 1.0 / get_ior(material_id, pos);
 
         if (going_out) {
           // simplification: "out" of any object is always vacuum
@@ -58,34 +58,34 @@ bool sample_specular(int material_id, bool going_out, vec3 normal, inout vec3 ra
     return false;
 }
 
-bool sample_diffuse(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
-    weight = get_diffuse(material_id);
+bool sample_diffuse(int material_id, bool going_out, vec3 pos, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
+    weight = get_diffuse(material_id, pos);
     ray = get_random_cosine_weighted(normal, rng);
     return true;
 }
 
-float sampling_pdf(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
+float sampling_pdf(int material_id, bool going_out, vec3 pos, vec3 normal, vec3 ray_in, vec3 ray_out) {
     return dot(normal, ray_out) / M_PI;
 }
 
-float sample_diffuse_and_prob(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
+float sample_diffuse_and_prob(int material_id, bool going_out, vec3 pos, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
     vec3 ray_in = ray;
-    sample_diffuse(material_id, going_out, normal, ray, weight, rng);
-    return sampling_pdf(material_id, going_out, normal, ray_in, ray);
+    sample_diffuse(material_id, going_out, pos, normal, ray, weight, rng);
+    return sampling_pdf(material_id, going_out, pos, normal, ray_in, ray);
 }
 
-color_type brdf_cos_weighted(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
-    return get_diffuse(material_id) * sampling_pdf(material_id, going_out, normal, ray_in, ray_out);
+color_type brdf_cos_weighted(int material_id, bool going_out, vec3 pos, vec3 normal, vec3 ray_in, vec3 ray_out) {
+    return get_diffuse(material_id, pos) * sampling_pdf(material_id, going_out, pos, normal, ray_in, ray_out);
 }
 
-float sample_ray_and_prob(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
-    if (sample_specular(material_id, going_out, normal, ray, weight, rng)) {
+float sample_ray_and_prob(int material_id, bool going_out, vec3 pos, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
+    if (sample_specular(material_id, going_out, pos, normal, ray, weight, rng)) {
         return -1.0;
     } else {
-        return sample_diffuse_and_prob(material_id, going_out, normal, ray, weight, rng);
+        return sample_diffuse_and_prob(material_id, going_out, pos, normal, ray, weight, rng);
     }
 }
 
-bool sample_ray(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
-    return sample_ray_and_prob(material_id, going_out, normal, ray, weight, rng) != 0.0;
+bool sample_ray(int material_id, bool going_out, vec3 pos, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
+    return sample_ray_and_prob(material_id, going_out, pos, normal, ray, weight, rng) != 0.0;
 }

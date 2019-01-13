@@ -1,6 +1,14 @@
 #define color_type {{colorType}}
 float color2prob(color_type c) { return {{{colorToProb}}}; }
 
+{{#textures}}
+uniform sampler2D texture_{{id}};
+vec4 map_texture_{{id}}(vec3 pos) {
+  vec4 rgba = texture2D(texture_{{id}}, {{{mapping}}});
+  return rgba;
+}
+{{/textures}}
+
 uniform sampler2D material_id_texture;
 uniform sampler2D emission_texture;
 
@@ -8,7 +16,13 @@ int get_material_id(int which_object) {
     return int(texture2D(material_id_texture, vec2(float(which_object)/float({{maxObjectId}}), 0.5)).x + 0.5);
 }
 
-bool get_emission(int material_id, out color_type emission) {
+bool get_emission(int material_id, vec3 pos, out color_type emission) {
+  {{#emissionTextures}}
+  if (material_id == {{id}}) {
+    emission = map_texture_{{textureId}}(pos).{{vectorMember}};
+    return (emission.x + emission.y + emission.z) > 0.0; // works with both RGB and grayscale
+  }
+  {{/emissionTextures}}
   vec4 val = texture2D(emission_texture, vec2(float(material_id)/float({{nMaterials}}-1), 0.5));
   emission = val.{{vectorMember}};
   return (val.x + val.y + val.z) > 0.0; // works with both RGB and grayscale
@@ -16,7 +30,12 @@ bool get_emission(int material_id, out color_type emission) {
 
 {{#properties}}
 uniform sampler2D {{name}}_texture;
-{{type}} get_{{name}}(int material_id) {
+{{type}} get_{{name}}(int material_id, vec3 pos) {
+  {{#textures}}
+  if (material_id == {{id}}) {
+    return map_texture_{{textureId}}(pos).{{vectorMember}};
+  }
+  {{/textures}}
   return texture2D({{name}}_texture, vec2(float(material_id)/float({{nMaterials}}-1), 0.5)).{{vectorMember}};
 }
 {{/properties}}

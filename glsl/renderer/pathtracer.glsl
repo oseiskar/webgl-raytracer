@@ -39,7 +39,7 @@ vec3 render(vec2 xy, vec2 resolution) {
             ray_pos += intersection.w * ray;
             int material_id = get_material_id(which_object);
 
-            if (get_emission(material_id, color)) {
+            if (get_emission(material_id, ray_pos, color)) {
                 result_color += ray_color * color;
             }
 
@@ -48,7 +48,7 @@ vec3 render(vec2 xy, vec2 resolution) {
                 normal = -normal;
             }
 
-            if (sample_ray(material_id, going_out, normal, ray, color, rng)) {
+            if (sample_ray(material_id, going_out, ray_pos, normal, ray, color, rng)) {
                 ray_color *= color;
             } else {
                 break;

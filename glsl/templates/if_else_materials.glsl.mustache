@@ -1,13 +1,26 @@
 #define color_type {{colorType}}
 float color2prob(color_type c) { return {{{colorToProb}}}; }
 
-bool get_emission(int which_obj, out color_type emission) {
+{{#textures}}
+uniform sampler2D texture_{{id}};
+vec4 map_texture_{{id}}(vec3 pos) {
+  vec4 rgba = texture2D(texture_{{id}}, {{{mapping}}});
+  return rgba;
+}
+{{/textures}}
+
+bool get_emission(int which_obj, vec3 pos, out color_type emission) {
   {{#materialEmissions}}
-  {{^first}}else {{/first}}if (false
+  if (false
     {{#objects}}
     || which_obj == {{id}}
     {{/objects}}) {
+    {{#textureId}}
+    emission = map_texture_{{textureId}}(pos).{{vectorMember}};
+    {{/textureId}}
+    {{^textureId}}
     emission = {{value}};
+    {{/textureId}}
     return true;
   }
   {{/materialEmissions}}
@@ -15,13 +28,18 @@ bool get_emission(int which_obj, out color_type emission) {
 }
 
 {{#properties}}
-{{type}} get_{{name}}(int which_obj) {
+{{type}} get_{{name}}(int which_obj, vec3 pos) {
   {{#materials}}
-  {{^first}}else {{/first}}if (false
+  if (false
     {{#objects}}
     || which_obj == {{id}}
     {{/objects}}) {
+    {{#textureId}}
+    return map_texture_{{textureId}}(pos).{{vectorMember}};
+    {{/textureId}}
+    {{^textureId}}
     return {{value}};
+    {{/textureId}}
   }
   {{/materials}}
   return {{default}};

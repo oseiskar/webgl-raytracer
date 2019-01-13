@@ -1,4 +1,3 @@
-
 function convertToGrayscale(property, value) {
   // if already a number
   if (Number.isFinite(value)) return value;
@@ -35,7 +34,13 @@ function autoConvert(material, toType) {
     const newMat = {};
     const srcMat = material[key];
     Object.keys(srcMat).forEach((property) => {
-      newMat[property] = convert(property, srcMat[property]);
+      const value = srcMat[property];
+      // textures: leave as-is
+      if (value.texture) {
+        newMat[property] = value;
+      } else {
+        newMat[property] = convert(property, value);
+      }
     });
     converted[key] = newMat;
   });

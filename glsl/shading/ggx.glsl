@@ -56,8 +56,8 @@ float ggx_sample_weight(float alpha, vec3 normal, vec3 i, vec3 o, vec3 m) {
     // f / p without Fresnel term
 }
 
-float sampling_pdf_ggx(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
-    float alpha = get_roughness(material_id);
+float sampling_pdf_ggx(int material_id, bool going_out, vec3 pos, vec3 normal, vec3 ray_in, vec3 ray_out) {
+    float alpha = get_roughness(material_id, pos);
     vec3 m = normalize(-ray_in + ray_out);
     float D = ggx_D(normal, m, alpha);
 
@@ -65,13 +65,13 @@ float sampling_pdf_ggx(int material_id, bool going_out, vec3 normal, vec3 ray_in
     return D * dot(m, normal) * ch_vars;
 }
 
-color_type brdf_cos_weighted(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
+color_type brdf_cos_weighted(int material_id, bool going_out, vec3 pos, vec3 normal, vec3 ray_in, vec3 ray_out) {
     color_type specular;
-    color_type reflection_color = get_reflectivity(material_id);
-    color_type diffuse = get_diffuse(material_id) / M_PI;
+    color_type reflection_color = get_reflectivity(material_id, pos);
+    color_type diffuse = get_diffuse(material_id, pos) / M_PI;
     if (color2prob(reflection_color) > 0.0) {
         vec3 m = normalize(-ray_in + ray_out);
-        float alpha = get_roughness(material_id);
+        float alpha = get_roughness(material_id, pos);
 
         float cosT = max(min(dot(ray_out, m), 1.0), 0.0);
         color_type F = fresnel_schlick_term(cosT, reflection_color);
@@ -89,10 +89,10 @@ color_type brdf_cos_weighted(int material_id, bool going_out, vec3 normal, vec3 
     return (specular + diffuse) * dot(ray_out, normal);
 }
 
-float get_specular(int material_id) {
-    float r = color2prob(get_reflectivity(material_id));
-    float t = color2prob(get_transparency(material_id));
-    float d = color2prob(get_diffuse(material_id));
+float get_specular(int material_id, vec3 pos) {
+    float r = color2prob(get_reflectivity(material_id, pos));
+    float t = color2prob(get_transparency(material_id, pos));
+    float d = color2prob(get_diffuse(material_id, pos));
     float shininess = 1.0 - (1.0 - r) * (1.0 - t);
     float diffuse = d * (1.0 - shininess);
     float den = shininess + diffuse;
@@ -100,29 +100,29 @@ float get_specular(int material_id) {
     return shininess / (shininess +  diffuse);
 }
 
-float sampling_pdf(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {
-    float specular = get_specular(material_id);
-    return specular * sampling_pdf_ggx(material_id, going_out, normal, ray_in, ray_out) +
+float sampling_pdf(int material_id, bool going_out, vec3 pos, vec3 normal, vec3 ray_in, vec3 ray_out) {
+    float specular = get_specular(material_id, pos);
+    return specular * sampling_pdf_ggx(material_id, going_out, pos, normal, ray_in, ray_out) +
       (1.0 - specular) * dot(normal, ray_out) / M_PI; // lambert
 }
 
-float sample_ray_and_prob(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
-    float specular = get_specular(material_id);
+float sample_ray_and_prob(int material_id, bool going_out, vec3 pos, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
+    float specular = get_specular(material_id, pos);
     vec3 ray_in = ray;
 
     float extra_weight = 1.0;
 
     if (rand_next_uniform(rng) < specular) {
-      float alpha = get_roughness(material_id);
+      float alpha = get_roughness(material_id, pos);
 
       // microfacet normal
       vec3 m = sample_ggx(normal, alpha, rng);
 
       color_type F = fresnel_schlick_term(
         max(min(dot(-ray_in, m), 1.0), 0.0), // cos(theta)
-        get_reflectivity(material_id));
+        get_reflectivity(material_id, pos));
 
-      color_type transparency = (1.0 - F)*get_transparency(material_id);
+      color_type transparency = (1.0 - F)*get_transparency(material_id, pos);
       float transmission_prob = color2prob(transparency);
 
       bool selected_transmission = rand_next_uniform(rng) < transmission_prob;
@@ -130,7 +130,7 @@ float sample_ray_and_prob(int material_id, bool going_out, vec3 normal, inout ve
           F = transparency / transmission_prob;
 
           // refraction
-          float eta = 1.0 / get_ior(material_id);
+          float eta = 1.0 / get_ior(material_id, pos);
 
           if (going_out) {
             // simplification: "out" of any object is always vacuum
@@ -168,12 +168,12 @@ float sample_ray_and_prob(int material_id, bool going_out, vec3 normal, inout ve
       ray = get_random_cosine_weighted(normal, rng);
     }
 
-    float pdf = sampling_pdf(material_id, going_out, normal, ray_in, ray);
+    float pdf = sampling_pdf(material_id, going_out, pos, normal, ray_in, ray);
     if (pdf <= 0.0) return 0.0;
-    weight = extra_weight * brdf_cos_weighted(material_id, going_out, normal, ray_in, ray) / pdf;
+    weight = extra_weight * brdf_cos_weighted(material_id, going_out, pos, normal, ray_in, ray) / pdf;
     return pdf;
 }
 
-bool sample_ray(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
-    return sample_ray_and_prob(material_id, going_out, normal, ray, weight, rng) != 0.0;
+bool sample_ray(int material_id, bool going_out, vec3 pos, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {
+    return sample_ray_and_prob(material_id, going_out, pos, normal, ray, weight, rng) != 0.0;
 }

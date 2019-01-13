@@ -15,7 +15,15 @@ const materials = {
     emission: [0.5, 0.5, 0.55].map(x => x * 1.7)
   },
   skyHorizon: {
-    diffuse: [0.7, 0.7, 1.0].map(x => x * 0.2)
+    diffuse: [0.7, 0.7, 1.0].map(x => x * 0.2),
+    emission: {
+      texture: {
+        source: {
+          file: 'glsl-bench/examples/black-hole/milkyway.jpg'
+        },
+        mapping: 'vec2(atan(pos.y, pos.x)/M_PI * 4.5 + 0.1, pos.z*0.05)'
+      }
+    }
   },
   walls: {
     diffuse: 0.8
