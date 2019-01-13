@@ -39,6 +39,7 @@ everything not related to "worlds with two triangles".
  - [x] [thin-lens](http://www.pbr-book.org/3ed-2018/Camera_Models/Projective_Camera_Models.html#TheThinLensModelandDepthofField),
    pinhole and orthographic camera models
  - [x] tent [reconstruction filter](https://imgur.com/a/jksVw)
+ - [x] image-based and procedural textures
 
 ### To-do list
 
@@ -48,7 +49,6 @@ everything not related to "worlds with two triangles".
  - [ ] constructive solid geometry
  - [ ] triangle meshes & octrees
  - [ ] interval arithmetic implicit surfaces
- - [ ] material textures
  - [ ] spectral color model (enables dispersion)
  - [ ] Airy disc reconstruction filter (blurs highlights)
 

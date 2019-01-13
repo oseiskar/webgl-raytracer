@@ -23,7 +23,15 @@ const materials = {
   },
   teal: {
     reflectivity: [0.25, 0.4, 0.45],
-    roughness: 0.33,
+    roughness: {
+      texture: {
+        procedural: `
+          vec3 uv = pos * 170.0;
+          float v = (sin(uv.x) + sin(uv.y) + sin(uv.z) > 0.5) ? 0.1 : 0.4;
+          return vec4(v,v,v,0);
+        `
+      }
+    },
     diffuse: [0.25, 0.4, 0.45]
   },
   plastic: {

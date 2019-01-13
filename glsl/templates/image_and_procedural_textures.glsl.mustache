@@ -1,0 +1,12 @@
+{{#textures}}
+{{^procedural}}
+uniform sampler2D texture_{{id}};
+{{/procedural}}
+vec4 map_texture_{{id}}(vec3 pos) {
+  {{{procedural}}}
+  {{^procedural}}
+  vec4 rgba = texture2D(texture_{{id}}, {{{mapping}}});
+  return rgba;
+  {{/procedural}}
+}
+{{/textures}}

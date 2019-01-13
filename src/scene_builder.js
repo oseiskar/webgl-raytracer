@@ -27,6 +27,8 @@ function toVec3(x) {
 function buildTextureProperties(uniqueMaterials) {
   const uniqueTextures = {};
   const textures = [];
+  const uniforms = {};
+
   uniqueMaterials
     .map(material => material.material)
     .forEach((material) => {
@@ -39,19 +41,29 @@ function buildTextureProperties(uniqueMaterials) {
           if (!textureId) {
             textureId = Object.keys(uniqueTextures).length + 1;
             uniqueTextures[key] = textureId;
-            textures.push({
-              id: textureId,
-              mapping: texture.mapping,
-              uniform: texture.source
-            });
+            const textureView = { id: textureId };
+            if (texture.procedural) {
+              textureView.procedural = texture.procedural;
+            } else {
+              textureView.mapping = texture.mapping;
+              uniforms[`texture_${textureId}`] = texture.source;
+            }
+            textures.push(textureView);
           }
           material[property].textureId = textureId;
         });
     });
-  return textures;
+
+  return {
+    textureCode: Mustache.render(
+      tracerData.templates['image_and_procedural_textures.glsl.mustache'],
+      { textures }
+    ),
+    textureUniforms: uniforms
+  };
 }
 
-function buildIfElseMaterials(uniqueMaterials, uniqueTextures, objectsById, shaderColorModel) {
+function buildIfElseMaterials(uniqueMaterials, objectsById, shaderColorModel) {
   function buildGenericProperty(name, type, defaultValue) {
     let defaultVal = defaultValue;
     let formatType;
@@ -93,7 +105,6 @@ function buildIfElseMaterials(uniqueMaterials, uniqueTextures, objectsById, shad
   return Mustache.render(tracerData.templates['if_else_materials.glsl.mustache'], {
     colorType,
     colorToProb,
-    textures: uniqueTextures,
     materialEmissions: buildGenericProperty('emission', colorType).materials,
     properties: [
       buildGenericProperty('diffuse', colorType),
@@ -105,7 +116,7 @@ function buildIfElseMaterials(uniqueMaterials, uniqueTextures, objectsById, shad
   });
 }
 
-function buildDataTextureMaterials(uniqueMaterials, uniqueTextures, objectsById, shaderColorModel) {
+function buildDataTextureMaterials(uniqueMaterials, objectsById, shaderColorModel) {
   function valueToVec(val) {
     if (Number.isFinite(val)) return [val, val, val, 1.0];
     if (val.length === 4) return val;
@@ -174,7 +185,6 @@ function buildDataTextureMaterials(uniqueMaterials, uniqueTextures, objectsById,
     vectorMember,
     colorToProb,
     emissionTextures: addTextures({ name: 'emission', vectorMember }).textures,
-    textures: uniqueTextures,
     properties: [
       {
         name: 'ior',
@@ -393,16 +403,12 @@ function SceneBuilder() {
     });
 
     let materialCode;
-    const materialData = {};
-    const uniqueTextures = buildTextureProperties(uniqueMaterials);
-
-    uniqueTextures.filter(t => t.uniform).forEach((texture) => {
-      materialData[`texture_${texture.id}`] = texture.uniform;
-    });
+    const { textureCode, textureUniforms } = buildTextureProperties(uniqueMaterials);
+    const materialData = { ...textureUniforms };
 
     if (enableMaterialTextures) {
       const { materialTextures, code } = buildDataTextureMaterials(
-        uniqueMaterials, uniqueTextures, objectsById, shaderColorModel
+        uniqueMaterials, objectsById, shaderColorModel
       );
       materialCode = code;
       Object.keys(materialTextures).forEach((property) => {
@@ -412,7 +418,7 @@ function SceneBuilder() {
       });
     } else {
       materialCode = buildIfElseMaterials(
-        uniqueMaterials, uniqueTextures, objectsById, shaderColorModel
+        uniqueMaterials, objectsById, shaderColorModel
       );
     }
 
@@ -432,6 +438,7 @@ function SceneBuilder() {
         tracers: uniqueTracers,
         objects: objectViews
       }),
+      textureCode,
       materialCode,
       Mustache.render(tracerData.templates['select_light.glsl.mustache'], {
         lights,

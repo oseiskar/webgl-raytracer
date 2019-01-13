@@ -1,14 +1,6 @@
 #define color_type {{colorType}}
 float color2prob(color_type c) { return {{{colorToProb}}}; }
 
-{{#textures}}
-uniform sampler2D texture_{{id}};
-vec4 map_texture_{{id}}(vec3 pos) {
-  vec4 rgba = texture2D(texture_{{id}}, {{{mapping}}});
-  return rgba;
-}
-{{/textures}}
-
 bool get_emission(int which_obj, vec3 pos, out color_type emission) {
   {{#materialEmissions}}
   if (false
