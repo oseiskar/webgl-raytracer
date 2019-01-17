@@ -17,6 +17,7 @@ function DistanceField(distanceFunction, options = {}) {
     escapeDistance: 1e5,
     maxStepSize: 1e5,
     maxSteps: 50,
+    scale: 1.0,
     convex: false
   }, options);
 

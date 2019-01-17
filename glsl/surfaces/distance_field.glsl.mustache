@@ -19,8 +19,11 @@ vec3 distance_field_gradient_{{distanceFieldId}}(vec3 pos) {
 
 vec4 distance_field_intersection_{{distanceFieldId}}(vec3 pos, vec3 ray, bool is_inside, bool prev_self) {
   const vec4 NO_INTERSECTION = vec4(0.0, 0.0, 0.0, -1.0);
-  const float distanceThreshold = float({{distanceThreshold}});
-  const float maxStepSize = float({{maxStepSize}});
+  const float escapeDistance = float({{escapeDistance}});
+  const float scale = float({{scale}});
+  float maxTotalDist = 1e20;
+  const float maxStepSize = float({{maxStepSize}}) * scale;
+  const float distanceThreshold = float({{distanceThreshold}}) * scale;
 
   {{#convex}}
   if (!is_inside && prev_self) return NO_INTERSECTION;
@@ -29,11 +32,26 @@ vec4 distance_field_intersection_{{distanceFieldId}}(vec3 pos, vec3 ray, bool is
   float fieldSign = is_inside ? -1.0 : 1.0;
   float totalDist = 0.0;
 
-  for (int i = 0; i < {{maxSteps}}; ++i) {
-    vec3 curPos = pos + ray*totalDist;
-    float dist = distance_field_func_{{distanceFieldId}}(curPos) * fieldSign;
+  {{#boundingRadius}}
+  // bounding sphere check
+  const float boundingR = float({{.}})*float({{scale}});
+  float dotp = dot(pos,ray);
+  float c_coeff = dot(pos,pos) - boundingR*boundingR;
+  float ray2 = dot(ray, ray);
+  float discr = dotp*dotp - ray2*c_coeff;
+  if (discr < 0.0) return NO_INTERSECTION;
 
-    if (dist > float({{escapeDistance}})) {
+  float sqrt_discr = sqrt(discr);
+  totalDist = (-dotp - sqrt_discr) / ray2;
+  maxTotalDist = (totalDist + sqrt_discr*2.0) / ray2;
+  totalDist = max(0.0, totalDist);
+  {{/boundingRadius}}
+
+  for (int i = 0; i < {{maxSteps}}; ++i) {
+    vec3 curPos = (pos + ray*totalDist) / scale;
+    float dist = distance_field_func_{{distanceFieldId}}(curPos) * fieldSign * scale;
+
+    if (dist > escapeDistance || totalDist > maxTotalDist) {
       return NO_INTERSECTION;
     }
     if (dist < distanceThreshold) {

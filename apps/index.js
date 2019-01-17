@@ -12,6 +12,7 @@ const sceneBuilders = {
   'Cornell Box': require('./scenes/cornell-box.js'),
   Window: require('./scenes/window.js'),
   Boxy: require('./scenes/boxy.js'),
+  'Julia Set': require('./scenes/julia-set.js'),
   'Stair Spiral': require('./scenes/stair-spiral.js'),
   'Github Avatar': require('./scenes/avatar.js')
 };

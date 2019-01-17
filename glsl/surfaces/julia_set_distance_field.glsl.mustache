@@ -1,0 +1,24 @@
+
+  #ifndef quaternion_mult
+  #define quaternion_mult(q1, q2) vec4( (q1).x*(q2).x - dot( (q1).yzw, (q2).yzw ), (q1).x*(q2).yzw + (q2).x*(q1).yzw + cross( (q1).yzw, (q2).yzw ))
+  #endif
+
+  #ifndef quaternion_square
+  #define quaternion_square(q) vec4( (q).x*(q).x - dot( (q).yzw, (q).yzw ), 2.0*(q).x*(q).yzw )
+  #endif
+
+  vec4 q = vec4(p,0), q1, qd = vec4(1,0,0,0);
+  vec4 c = vec4({{cx}}, {{cy}}, {{cz}}, {{cw}});
+
+  for (int i=0; i<{{iterations}}; ++i)
+  {
+    qd = 2.0*quaternion_mult(q,qd);
+    q = quaternion_square(q) + c;
+    if (length(q) > 4.0) break;
+  }
+
+  // The magic distance estimate formula, see the 1989 article:
+  // Hart, Sandin, Kauffman, "Ray Tracing Deterministic 3-D Fractals"
+  float l = length(q);
+  l = 0.5 * l * log(l) / length(qd);
+  return l;
