@@ -115,7 +115,7 @@ const Dome = require('../../src/surfaces/dome.js');
 const MaterialHelpers = require('../../src/material_helpers.js');
 
 const SKY_EMISSION = 2.0;
-const COLOR = [97, 212, 207].map(x => x / 255);
+const COLOR = [97, 212, 207].map(x => (x / 255) ** 1.8);
 
 const materials = {
   dome: {
@@ -136,7 +136,7 @@ const materials = {
     ior: 1.5
   },
   floor: {
-    diffuse: [1, 1, 1].map(x => x * 0.915)
+    diffuse: [1, 1, 1].map(x => x * 0.8)
   }
 };
 
@@ -179,7 +179,7 @@ function getBuilder(shaderColorType = 'rgb') {
 
 module.exports = getBuilder;
 
-},{"../../src/material_helpers.js":20,"../../src/scene_builder.js":24,"../../src/surfaces/box.js":25,"../../src/surfaces/dome.js":28,"../../src/surfaces/half_space.js":29}],3:[function(require,module,exports){
+},{"../../src/material_helpers.js":22,"../../src/scene_builder.js":26,"../../src/surfaces/box.js":27,"../../src/surfaces/dome.js":30,"../../src/surfaces/half_space.js":31}],3:[function(require,module,exports){
 const seedrandom = require('seedrandom');
 const { m4 } = require('twgl.js');
 
@@ -194,13 +194,13 @@ const materials = {
     emission: [1.0, 1.0, 0.9].map(x => x * 40)
   },
   walls: {
-    diffuse: 0.8
+    diffuse: 0.6
   },
   ceiling: {
-    diffuse: 0.8
+    diffuse: 0.6
   },
   mineral: {
-    diffuse: [0.3, 0.3, 0.5],
+    diffuse: [0.2, 0.2, 0.5],
     reflectivity: [0.1, 0.1, 0.2],
     roughness: 0.02
   },
@@ -284,7 +284,7 @@ function getBuilder(shaderColorType = 'rgb') {
 
 module.exports = getBuilder;
 
-},{"../../src/material_helpers.js":20,"../../src/scene_builder.js":24,"../../src/surfaces/box.js":25,"../../src/surfaces/plane.js":30,"../../src/surfaces/sphere.js":31,"seedrandom":11,"twgl.js":"twgl.js"}],4:[function(require,module,exports){
+},{"../../src/material_helpers.js":22,"../../src/scene_builder.js":26,"../../src/surfaces/box.js":27,"../../src/surfaces/plane.js":33,"../../src/surfaces/sphere.js":34,"seedrandom":13,"twgl.js":"twgl.js"}],4:[function(require,module,exports){
 // scene from https://www.graphics.cornell.edu/online/box/data.html
 // ... kind of, the objects are not exactly the corret size or in the correct
 // positions. The lighting (here rgb-based) is not correct either
@@ -296,20 +296,20 @@ const Plane = require('../../src/surfaces/plane.js');
 const Box = require('../../src/surfaces/box.js');
 const MaterialHelpers = require('../../src/material_helpers.js');
 
-const EMISSION = 25.0;
+const EMISSION = 30.0;
 
 const materials = {
   leftWall: {
-    diffuse: [0.9, 0.2, 0.2]
+    diffuse: [0.6, 0.05, 0.05]
   },
   rightWall: {
-    diffuse: [0.2, 0.9, 0.2]
+    diffuse: [0.05, 0.6, 0.05]
   },
   others: {
-    diffuse: 0.9
+    diffuse: 0.7
   },
   light: {
-    emission: [1, 0.9, 0.7].map(x => x * EMISSION)
+    emission: [1, 0.9, 0.6].map(x => x * EMISSION)
   }
 };
 
@@ -346,7 +346,100 @@ function getBuilder(shaderColorType = 'rgb') {
 
 module.exports = getBuilder;
 
-},{"../../src/material_helpers.js":20,"../../src/scene_builder.js":24,"../../src/surfaces/box.js":25,"../../src/surfaces/plane.js":30,"twgl.js":"twgl.js"}],5:[function(require,module,exports){
+},{"../../src/material_helpers.js":22,"../../src/scene_builder.js":26,"../../src/surfaces/box.js":27,"../../src/surfaces/plane.js":33,"twgl.js":"twgl.js"}],5:[function(require,module,exports){
+const seedrandom = require('seedrandom');
+
+const SceneBuilder = require('../../src/scene_builder.js');
+const HalfSpace = require('../../src/surfaces/half_space.js');
+const Sphere = require('../../src/surfaces/sphere.js');
+const Box = require('../../src/surfaces/box.js');
+const MaterialHelpers = require('../../src/material_helpers.js');
+
+const materials = {
+  air: {
+    mean_scattering_distance: [1.0, 1.0, 0.6].map(x => x * 50),
+    scattering_anisotropy: 0.99
+  },
+  light: {
+    emission: [1, 1, 1].map(x => x * 3.0)
+  },
+  warmLight: {
+    emission: [1, 0.9, 0.8].map(x => x * 1.2),
+    diffuse: [0.5, 0.5, 0.5]
+  },
+  things: {
+    reflectivity: 0.3,
+    roughness: 0.03,
+    diffuse: [0.9, 0.9, 0.9]
+  },
+  glass: {
+    reflectivity: 0.1,
+    roughness: 0.0,
+    transparency: 1, // sampled after reflectivity
+    ior: 1.5
+  },
+  matte: {
+    diffuse: [0.9, 0.9, 0.9]
+  },
+  floor: {
+    diffuse: [0.1, 0.1, 0.1],
+    emission: {
+      texture: {
+        procedural: `
+          vec3 uv = pos * 4.0;
+          if (sin(uv.x) + sin(uv.y) + sin(uv.z) > 0.5) {
+            return vec4(sin(pos.y)*0.5 + 0.5,0,cos(pos.x*0.4)*0.2 + 0.5,0) / (1.0 + length(pos) * 0.3) * 5.0;
+          } else {
+            return vec4(0,0,0,0);
+          }
+        `
+      }
+    }
+  }
+};
+
+function randnBoxMuller(rng) {
+  let u = 0; let
+    v = 0;
+  while (u === 0) u = rng(); // Converting [0,1) to (0,1)
+  while (v === 0) v = rng();
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+function getBuilder(shaderColorType = 'rgb') {
+  const m = MaterialHelpers.autoConvert(materials, shaderColorType);
+  const builder = new SceneBuilder()
+    .setFixedPinholeCamera({
+      fov: 55,
+      yaw: 70,
+      pitch: -17,
+      target: [0, 0, 0.0],
+      distance: 25,
+      apertureSize: 0.07
+    })
+    .setAirMaterial(m.air)
+    .addObject(new Box(6, 6, 3), [10, -10, 15], m.light)
+    .addObject(new HalfSpace([0, 0, 1]), [0, 0, 0], m.floor)
+    .setComputationLoadEstimate(6.0);
+
+  const matOptions = [m.glass, m.warmLight, m.things, m.glass];
+
+  const rng = seedrandom(3);
+  for (let i = 0; i < 30; ++i) {
+    const r = rng() * 2.0 + 0.2;
+    const x = randnBoxMuller(rng) * 8.0;
+    const y = randnBoxMuller(rng) * 10.0;
+    const z = r;
+    const material = matOptions[i % matOptions.length];
+    builder.addObject(new Sphere(r), [x, y, z], material);
+  }
+
+  return builder;
+}
+
+module.exports = getBuilder;
+
+},{"../../src/material_helpers.js":22,"../../src/scene_builder.js":26,"../../src/surfaces/box.js":27,"../../src/surfaces/half_space.js":31,"../../src/surfaces/sphere.js":34,"seedrandom":13}],6:[function(require,module,exports){
 const SceneBuilder = require('../../src/scene_builder.js');
 const Sphere = require('../../src/surfaces/sphere.js');
 const BoxInterior = require('../../src/surfaces/box_interior.js');
@@ -356,7 +449,7 @@ const MaterialHelpers = require('../../src/material_helpers.js');
 const ROOM_H = 2.0;
 const ROOM_W = 5.0;
 const LIGHT_R = 0.4;
-const BRIGHTNESS = 75;
+const BRIGHTNESS = 60;
 
 function emissionPerSurfaceArea(color, sphereR, totalIntensity = 1.0) {
   const mult = totalIntensity / (4 * Math.PI * sphereR * sphereR);
@@ -371,28 +464,36 @@ const materials = {
     ior: 1.5
   },
   teal: {
-    reflectivity: [0.25, 0.4, 0.45],
-    roughness: 0.33,
-    diffuse: [0.25, 0.4, 0.45]
+    reflectivity: [0.2, 0.4, 0.5],
+    roughness: {
+      texture: {
+        procedural: `
+          vec3 uv = pos * 170.0;
+          float v = (sin(uv.x) + sin(uv.y) + sin(uv.z) > 0.5) ? 0.1 : 0.4;
+          return vec4(v,v,v,0);
+        `
+      }
+    },
+    diffuse: [0.2, 0.4, 0.5]
   },
   plastic: {
     reflectivity: 0.03,
     roughness: 0.15,
-    diffuse: [0.4, 0.4, 0.1]
+    diffuse: [0.4, 0.4, 0.05]
   },
   light1: {
-    emission: emissionPerSurfaceArea([0.8, 0.8, 1.0], LIGHT_R, BRIGHTNESS)
+    emission: emissionPerSurfaceArea([0.7, 0.7, 1.0], LIGHT_R, BRIGHTNESS)
   },
   light2: {
-    emission: emissionPerSurfaceArea([1.0, 0.8, 0.6], LIGHT_R, BRIGHTNESS)
+    emission: emissionPerSurfaceArea([1.0, 0.7, 0.5], LIGHT_R, BRIGHTNESS)
   },
   walls: {
-    diffuse: 0.6
+    diffuse: 0.25
   },
   floor: {
     reflectivity: 0.3,
     roughness: 0.05,
-    diffuse: 0.1
+    diffuse: 0.05
   }
 };
 
@@ -425,7 +526,70 @@ function getBuilder(shaderColorType = 'rgb') {
 
 module.exports = getBuilder;
 
-},{"../../src/material_helpers.js":20,"../../src/scene_builder.js":24,"../../src/surfaces/box_interior.js":26,"../../src/surfaces/plane.js":30,"../../src/surfaces/sphere.js":31}],6:[function(require,module,exports){
+},{"../../src/material_helpers.js":22,"../../src/scene_builder.js":26,"../../src/surfaces/box_interior.js":28,"../../src/surfaces/plane.js":33,"../../src/surfaces/sphere.js":34}],7:[function(require,module,exports){
+const SceneBuilder = require('../../src/scene_builder.js');
+const HalfSpace = require('../../src/surfaces/half_space.js');
+const JuliaSet = require('../../src/surfaces/julia_set.js');
+const Dome = require('../../src/surfaces/dome.js');
+const MaterialHelpers = require('../../src/material_helpers.js');
+
+const SKY_EMISSION = 3.5;
+const COLOR = [97, 212, 207].map(x => x / 255);
+
+const materials = {
+  dome: {
+    diffuse: [0, 0, 0]
+  },
+  sky: {
+    diffuse: [0, 0, 0],
+    emission: [1, 1, 1].map(x => x * SKY_EMISSION)
+  },
+  things: {
+    transparency: 1,
+    ior: 1.5,
+    reflectivity: 0.1,
+    mean_scattering_distance: COLOR.map(x => x * 0.1)
+  },
+  floor: {
+    diffuse: {
+      texture: {
+        procedural: `
+          vec3 uv = pos * 4.0;
+          if (sin(uv.x) + sin(uv.y) + sin(uv.z) > 0.5) {
+            return vec4(1,1,1,0) * 0.25;
+          } else {
+            return vec4(1,1,1,0) * 0.4;
+          }
+        `
+      }
+    }
+  }
+};
+
+const SKY_DISTANCE = 100.0;
+
+function getBuilder(shaderColorType = 'rgb') {
+  const m = MaterialHelpers.autoConvert(materials, shaderColorType);
+  return new SceneBuilder()
+    .setFixedPinholeCamera({
+      fov: 55,
+      yaw: 60,
+      pitch: -30,
+      target: [0, 0, 1.8],
+      distance: 4,
+      apertureSize: 0.01
+    })
+    .addObject(new Dome(SKY_DISTANCE), [0, 0, 0], m.dome)
+    .addObject(new HalfSpace([0, 0, -1]), [0, 0, SKY_DISTANCE * 0.7], m.sky)
+    .addObject(new HalfSpace([0, 0, 1]), [0, 0, 0], m.floor)
+    .addObject(new JuliaSet([0.0, -0.45, -0.7, 0.0], 5,
+      { distanceThreshold: 2e-3 }), [0, 0, 2.0], m.things)
+    .setComputationLoadEstimate(6.0);
+}
+
+module.exports = getBuilder;
+
+},{"../../src/material_helpers.js":22,"../../src/scene_builder.js":26,"../../src/surfaces/dome.js":30,"../../src/surfaces/half_space.js":31,"../../src/surfaces/julia_set.js":32}],8:[function(require,module,exports){
 // https://github.com/oseiskar/raytracer/blob/master/scenes/scene-stairs.py
 
 const { m4 } = require('twgl.js');
@@ -454,7 +618,7 @@ const materials = {
     diffuse: [0.6, 0.1, 0.1]
   },
   floor: {
-    diffuse: [0.8, 0.8, 0.8]
+    diffuse: [0.6, 0.6, 0.6]
   },
   glass: {
     reflectivity: 0.05,
@@ -511,7 +675,7 @@ function getBuilder(shaderColorType = 'rgb') {
 
 module.exports = getBuilder;
 
-},{"../../src/material_helpers.js":20,"../../src/scene_builder.js":24,"../../src/surfaces/box.js":25,"../../src/surfaces/dome.js":28,"../../src/surfaces/half_space.js":29,"../../src/surfaces/sphere.js":31,"twgl.js":"twgl.js"}],7:[function(require,module,exports){
+},{"../../src/material_helpers.js":22,"../../src/scene_builder.js":26,"../../src/surfaces/box.js":27,"../../src/surfaces/dome.js":30,"../../src/surfaces/half_space.js":31,"../../src/surfaces/sphere.js":34,"twgl.js":"twgl.js"}],9:[function(require,module,exports){
 const SceneBuilder = require('../../src/scene_builder.js');
 const Sphere = require('../../src/surfaces/sphere.js');
 const Plane = require('../../src/surfaces/plane.js');
@@ -529,16 +693,20 @@ const materials = {
     emission: [0.5, 0.5, 0.55].map(x => x * 1.7)
   },
   skyHorizon: {
-    diffuse: [0.7, 0.7, 1.0].map(x => x * 0.2)
+    emission: {
+      texture: {
+        source: {
+          file: 'glsl-bench/examples/black-hole/milkyway.jpg'
+        },
+        mapping: 'vec2(atan(pos.y, pos.x)/M_PI * 4.5 + 0.1, pos.z*0.05)'
+      }
+    }
   },
   walls: {
-    diffuse: 0.8
+    diffuse: 0.6
   },
   ground: {
-    diffuse: [0.8, 0.7, 0.5]
-  },
-  floor: {
-    diffuse: [0.8, 0.7, 0.5]
+    diffuse: [0.9, 0.75, 0.5].map(x => x * 0.6)
   },
   sculpture: {
     diffuse: 0.9
@@ -644,15 +812,15 @@ function getBuilder(shaderColorType = 'rgb') {
 
 module.exports = getBuilder;
 
-},{"../../src/material_helpers.js":20,"../../src/scene_builder.js":24,"../../src/surfaces/box.js":25,"../../src/surfaces/distance_field.js":27,"../../src/surfaces/dome.js":28,"../../src/surfaces/plane.js":30,"../../src/surfaces/sphere.js":31}],8:[function(require,module,exports){
+},{"../../src/material_helpers.js":22,"../../src/scene_builder.js":26,"../../src/surfaces/box.js":27,"../../src/surfaces/distance_field.js":29,"../../src/surfaces/dome.js":30,"../../src/surfaces/plane.js":33,"../../src/surfaces/sphere.js":34}],10:[function(require,module,exports){
 
 
-module.exports = {"shading":{"ggx.glsl":"#include \"rand\"\n#include \"scene\"\n#include \"util/math.glsl\"\n#include \"util/random_helpers.glsl\"\n\n/*\n * GGX-based microfacet model suitable for bidirectional tracing of\n * rough specular reflections\n */\n\nfloat ggx_D(vec3 n, vec3 m, float alpha) {\n    float mn = dot(m, n);\n    if (mn < 0.0) return 0.0;\n    float mn2 = mn*mn;\n    float a2 = alpha * alpha;\n    float den = 1.0 + mn2 * (a2 - 1.0); // = cos^2(theta)*(a2 + tan^2(theta))\n    if (den <= 0.0) return 0.0; // avoid numerical issues\n    return a2 / (M_PI * den * den);\n}\n\nfloat ggx_G1(vec3 v, vec3 m, vec3 n, float alpha) {\n    const float eps = 1e-4;\n    float vm = dot(v, m);\n    float vn = dot(v, n); // note: sign only depends on refraction vs reflection\n    if (sign(vm) * sign(vn) < 0.0) return 0.0; // vm/vn < 0.0\n    float vn2 = vn*vn;\n    float a2 = alpha*alpha;\n    // = 2 / (1 + sqrt(1 + alpha^2 tan^2(theta)))\n    //return 2.0 / (1.0 + sqrt(max(1.0 + alpha * alpha * (1.0 - vm2) / vm2, 0.0)));\n    return 2.0 / (1.0 + sqrt(max(a2 / vn2 + 1.0 - a2, 0.0)));\n}\n\ncolor_type fresnel_schlick_term(float cos_theta, color_type f0) {\n    return f0 + (1.0 - f0) * pow(1.0 - cos_theta, 5.0);\n}\n\nvec3 sample_ggx(vec3 normal, float alpha, inout rand_state rng) {\n    vec3 dir = rand_next_gauss3(rng);\n    // project to surface\n    dir = normalize(dir - dot(dir, normal)*normal);\n    float eta = rand_next_uniform(rng);\n    float theta = atan(alpha * sqrt(eta) / sqrt(1.0 - eta));\n    return normal * cos(theta) + dir * sin(theta);\n}\n\n// sample weight for GGX specular samples if used in unidirectional tracing\nfloat ggx_sample_weight(float alpha, vec3 normal, vec3 i, vec3 o, vec3 m) {\n    float G = ggx_G1(i, m, normal, alpha) * ggx_G1(o, m, normal, alpha);\n\n    // cos(theta) * bdrf / Fresnel / sampling_pdf\n    // cos(theta) * D * G  / (4.0 * |i.n| * |o.n|) / (D * |m.n| / (4.0 * |o.m|))\n    // cos(theta) * G * |o.m| / (|i.n| * |o.n| * |m.n|) // cos(theta) = |o.n|\n    // G * |o.m| / (|i.n| * |m.n|)   // |o.m| = |i.m| (half vector)\n    // G * |i.m| / (|i.n| * |i.n|)\n    return dot(i, m) * G  / (dot(i, normal) * dot(m, normal));\n    // f / p without Fresnel term\n}\n\nfloat sampling_pdf_ggx(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {\n    float alpha = get_roughness(material_id);\n    vec3 m = normalize(-ray_in + ray_out);\n    float D = ggx_D(normal, m, alpha);\n\n    float ch_vars = 1.0 / (4.0 * dot(ray_out, m));\n    return D * dot(m, normal) * ch_vars;\n}\n\ncolor_type brdf_cos_weighted(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {\n    color_type specular;\n    color_type reflection_color = get_reflectivity(material_id);\n    color_type diffuse = get_diffuse(material_id) / M_PI;\n    if (color2prob(reflection_color) > 0.0) {\n        vec3 m = normalize(-ray_in + ray_out);\n        float alpha = get_roughness(material_id);\n\n        float cosT = max(min(dot(ray_out, m), 1.0), 0.0);\n        color_type F = fresnel_schlick_term(cosT, reflection_color);\n        float G = ggx_G1(-ray_in, m, normal, alpha) * ggx_G1(ray_out, m, normal, alpha);\n        float D = ggx_D(normal, m, alpha);\n\n        specular = F * D * G / (4.0 * dot(ray_out, m) * dot(-ray_in, normal));\n        // note: this is not mathematically exact for the microfacet model:\n        // should be something like \\int (1.0 - F(m)) p(m) dm over all\n        // microfacet normals m, but seems to look fine\n        diffuse *= (1.0 - F);\n    } else {\n        specular = reflection_color; // = 0\n    }\n    return (specular + diffuse) * dot(ray_out, normal);\n}\n\nfloat get_specular(int material_id) {\n    float r = color2prob(get_reflectivity(material_id));\n    float t = color2prob(get_transparency(material_id));\n    float d = color2prob(get_diffuse(material_id));\n    float shininess = 1.0 - (1.0 - r) * (1.0 - t);\n    float diffuse = d * (1.0 - shininess);\n    float den = shininess + diffuse;\n    if (den <= 0.0) return 0.0;\n    return shininess / (shininess +  diffuse);\n}\n\nfloat sampling_pdf(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {\n    float specular = get_specular(material_id);\n    return specular * sampling_pdf_ggx(material_id, going_out, normal, ray_in, ray_out) +\n      (1.0 - specular) * dot(normal, ray_out) / M_PI; // lambert\n}\n\nfloat sample_ray_and_prob(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {\n    float specular = get_specular(material_id);\n    vec3 ray_in = ray;\n\n    float extra_weight = 1.0;\n\n    if (rand_next_uniform(rng) < specular) {\n      float alpha = get_roughness(material_id);\n\n      // microfacet normal\n      vec3 m = sample_ggx(normal, alpha, rng);\n\n      color_type F = fresnel_schlick_term(\n        max(min(dot(-ray_in, m), 1.0), 0.0), // cos(theta)\n        get_reflectivity(material_id));\n\n      color_type transparency = (1.0 - F)*get_transparency(material_id);\n      float transmission_prob = color2prob(transparency);\n\n      bool selected_transmission = rand_next_uniform(rng) < transmission_prob;\n      if (selected_transmission) {\n          F = transparency / transmission_prob;\n\n          // refraction\n          float eta = 1.0 / get_ior(material_id);\n\n          if (going_out) {\n            // simplification: \"out\" of any object is always vacuum\n            // and no nested transparent objects are supported\n            eta = 1.0 / eta;\n          }\n\n          // see https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/refract.xhtml\n          // Snell's law for refraction\n          float d = dot(m, ray);\n          float k = 1.0 - eta*eta * (1.0 - d*d);\n          if (k < 0.0) {\n              // total reflection\n              ray = ray - 2.0*d*m;\n          } else {\n              ray = eta * ray - (eta * d + sqrt(k)) * m;\n          }\n      } else {\n          extra_weight = 1.0 / (1.0 - transmission_prob);\n          F *= extra_weight;\n\n          // reflection\n          ray = ray - 2.0*dot(m, ray)*m;\n      }\n\n      // perfectly shiny surface cannot use bidirectional tracing\n      // also using unidirectional shading for refraction (for simplicity)\n      if (alpha <= 0.0 || selected_transmission) {\n          float w = ggx_sample_weight(alpha, normal, -ray_in, ray, m);\n          if (w <= 0.0) return 0.0;\n          weight = w * F;\n          return -1.0;\n      }\n    } else {\n      ray = get_random_cosine_weighted(normal, rng);\n    }\n\n    float pdf = sampling_pdf(material_id, going_out, normal, ray_in, ray);\n    if (pdf <= 0.0) return 0.0;\n    weight = extra_weight * brdf_cos_weighted(material_id, going_out, normal, ray_in, ray) / pdf;\n    return pdf;\n}\n\nbool sample_ray(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {\n    return sample_ray_and_prob(material_id, going_out, normal, ray, weight, rng) != 0.0;\n}\n","simple.glsl":"#include \"rand\"\n#include \"scene\"\n#include \"util/math.glsl\"\n#include \"util/random_helpers.glsl\"\n\nbool color_prob_choice(color_type color, out color_type out_color, inout float choice_sample) {\n    float p = color2prob(color);\n    if (random_choice(p, choice_sample)) {\n        out_color = color / p;\n        return true;\n    }\n    return false;\n}\n\nbool sample_specular(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {\n    float choice_sample = rand_next_uniform(rng);\n    float roughness = get_roughness(material_id);\n\n    vec3 n = normal;\n\n    // simple \"roughness\" handling\n    if (roughness >= 0.0) {\n        // sample microsurface normal\n        n = normalize(n + rand_next_gauss3(rng)*roughness);\n    }\n\n    if (color_prob_choice(get_reflectivity(material_id), weight, choice_sample)) {\n        // full reflection\n        ray = ray - 2.0*dot(n, ray)*n;\n\n        // check with original normal, needed to prevent light leak into\n        // opaque objects\n        if (dot(ray, normal) < 0.0) return false;\n        return true;\n    }\n    if (color_prob_choice(get_transparency(material_id), weight, choice_sample)) {\n        // refraction\n        float eta = 1.0 / get_ior(material_id);\n\n        if (going_out) {\n          // simplification: \"out\" of any object is always vacuum\n          // and no nested transparent objects are supported\n          eta = 1.0 / eta;\n        }\n\n        // see https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/refract.xhtml\n        // Snell's law for refraction\n        float d = dot(n, ray);\n        float k = 1.0 - eta*eta * (1.0 - d*d);\n        if (k < 0.0) {\n            // total reflection\n            ray = ray - 2.0*d*n;\n        } else {\n            ray = eta * ray - (eta * d + sqrt(k)) * n;\n        }\n        return true;\n    }\n    return false;\n}\n\nbool sample_diffuse(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {\n    weight = get_diffuse(material_id);\n    ray = get_random_cosine_weighted(normal, rng);\n    return true;\n}\n\nfloat sampling_pdf(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {\n    return dot(normal, ray_out) / M_PI;\n}\n\nfloat sample_diffuse_and_prob(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {\n    vec3 ray_in = ray;\n    sample_diffuse(material_id, going_out, normal, ray, weight, rng);\n    return sampling_pdf(material_id, going_out, normal, ray_in, ray);\n}\n\ncolor_type brdf_cos_weighted(int material_id, bool going_out, vec3 normal, vec3 ray_in, vec3 ray_out) {\n    return get_diffuse(material_id) * sampling_pdf(material_id, going_out, normal, ray_in, ray_out);\n}\n\nfloat sample_ray_and_prob(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {\n    if (sample_specular(material_id, going_out, normal, ray, weight, rng)) {\n        return -1.0;\n    } else {\n        return sample_diffuse_and_prob(material_id, going_out, normal, ray, weight, rng);\n    }\n}\n\nbool sample_ray(int material_id, bool going_out, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {\n    return sample_ray_and_prob(material_id, going_out, normal, ray, weight, rng) != 0.0;\n}\n"},"util":{"math.glsl":"#define M_PI 3.14159265358979323846\n","random_helpers.glsl":"#include \"rand\"\n\nvec3 get_random_cosine_weighted(vec3 normal, inout rand_state rng) {\n    // cosine weighted\n    vec3 dir = rand_next_gauss3(rng);\n    // project to surface\n    dir = normalize(dir - dot(dir, normal)*normal);\n    float r = rand_next_uniform(rng);\n    return normal * sqrt(1.0 - r) + dir * sqrt(r);\n}\n\n// assuming x is random uniform in [0,1], return x < prob and make\n// x a new random uniform in [0, 1] independent of this choice\nbool random_choice(float prob, inout float x) {\n    if (x < prob) {\n      x /= prob;\n      return true;\n    } else {\n      x = (x - prob) / (1.0 - prob);\n      return false;\n    }\n}\n\n// bias-inducing workaround for ill-behaved sampling\n// drop all sufficiently nasty samples\n#ifndef MAX_SAMPLE_WEIGHT\n#define MAX_SAMPLE_WEIGHT 100.0\n#endif\n","camera_helpers.glsl":"#include \"rand\"\n#include \"util/math.glsl\"\n\n#ifndef ENABLE_TENT_FILTER\n#define ENABLE_TENT_FILTER 1\n#endif\n\nfloat tent_filter_transformation(float x) {\n    x *= 2.0;\n    if (x < 1.0) return sqrt(x) - 1.0;\n    return 1.0 - sqrt(2.0 - x);\n}\n\nvec2 get_ccd_pos(vec2 screen_pos, vec2 resolution, inout rand_state rng) {\n    float aspect = resolution.y / resolution.x;\n#if ENABLE_TENT_FILTER\n    vec2 jittered_pos = screen_pos + vec2(\n            tent_filter_transformation(rand_next_uniform(rng)),\n            tent_filter_transformation(rand_next_uniform(rng)));\n#else\n    vec2 jittered_pos = screen_pos;\n#endif\n    return ((jittered_pos / resolution.xy) * 2.0 - 1.0) * vec2(1.0, aspect);\n}\n"},"renderer":{"flat_color_shader.glsl":"#include \"scene\"\n#include \"rand\"\n#include \"camera\"\n\n#ifndef BRIGHTNESS\n#define BRIGHTNESS 1.5\n#endif\n\nvec3 render(vec2 xy, vec2 resolution) {\n    rand_state rng;\n    rand_init(rng);\n\n    vec3 ray_pos;\n    vec3 ray;\n    vec3 white = vec3(1,1,1);\n    get_camera_ray(xy, resolution, ray_pos, ray, rng);\n\n    // find intersection\n    vec4 intersection; // vec4(normal.xyz, distance)\n    int which_object = find_intersection(ray_pos, ray, 0, 0, intersection);\n\n    if (which_object == 0) {\n        return vec3(0.0, 0.0, 0.0);\n    } else {\n        int material_id = get_material_id(which_object);\n        vec3 emission;\n        if (get_emission(material_id, emission)) {\n            return emission * white;\n        }\n        return get_diffuse(material_id) * white;\n    }\n}\n","pathtracer.glsl":"#include \"parameters\"\n#include \"scene\"\n#include \"rand\"\n#include \"camera\"\n#include \"shading\"\n#include \"util/random_helpers.glsl\"\n\n#ifndef N_BOUNCES\n#define N_BOUNCES 4\n#endif\n\nvec3 render(vec2 xy, vec2 resolution) {\n\n    rand_state rng;\n    rand_init(rng);\n\n    vec3 ray_pos;\n    vec3 ray;\n    get_camera_ray(xy, resolution, ray_pos, ray, rng);\n    vec3 ray_color = vec3(1.0, 1.0, 1.0);\n\n    const vec3 zero_vec3 = vec3(0.0, 0.0, 0.0);\n    int prev_object = 0; // assumed to be OBJ_NONE\n    int inside_object = 0;\n    vec3 result_color = zero_vec3;\n    color_type color;\n\n    float choice_sample = rand_next_uniform(rng);\n\n    for (int bounce = 0; bounce <= N_BOUNCES; ++bounce) {\n        // find intersection\n        vec4 intersection; // vec4(normal.xyz, distance)\n        int which_object = find_intersection(ray_pos, ray, prev_object, inside_object, intersection);\n\n        if (which_object == 0) {\n            ray_color = zero_vec3;\n        } else {\n            vec3 normal = intersection.xyz;\n            ray_pos += intersection.w * ray;\n            int material_id = get_material_id(which_object);\n\n            if (get_emission(material_id, color)) {\n                result_color += ray_color * color;\n            }\n\n            bool going_out = which_object == inside_object;\n            if (going_out) {\n                normal = -normal;\n            }\n\n            if (sample_ray(material_id, going_out, normal, ray, color, rng)) {\n                ray_color *= color;\n            } else {\n                break;\n            }\n\n            // workaround for nasty samples\n            if ((ray_color.x + ray_color.y + ray_color.z) / 3.0 > MAX_SAMPLE_WEIGHT) break;\n\n            if (dot(ray, normal) < 0.0) {\n                if (going_out) {\n                    // normal = -normal (not used)\n                    inside_object = 0;\n                }\n                else inside_object = which_object;\n            }\n            prev_object = which_object;\n        }\n    }\n    return result_color;\n}\n","random_flat_color_shader.glsl":"#include \"scene\"\n#include \"rand\"\n#include \"camera\"\n\nvec3 get_random_color(int which_object, vec3 normal) {\n  float objCol = float(which_object - which_object / 5) / 5.0;\n  if (normal.x == 0.0) {\n    return vec3(objCol, (1.0 + sign(normal.y))*0.5, (1.0 + sign(normal.z))*0.5);\n  } else if (normal.y == 0.0) {\n    return vec3((1.0 + sign(normal.x))*0.5, objCol, (1.0 - sign(normal.z))*0.5);\n  } else if (normal.z == 0.0) {\n    return vec3((1.0 - sign(normal.x))*0.5, (1.0 - sign(normal.y))*0.5, objCol);\n  }\n  else {\n    return vec3(objCol, 1.0 - objCol, objCol*objCol);\n  }\n}\n\nvec3 render(vec2 xy, vec2 resolution) {\n    rand_state rng;\n    rand_init(rng);\n\n    vec3 ray_pos;\n    vec3 ray;\n    get_camera_ray(xy, resolution, ray_pos, ray, rng);\n\n    // find intersection\n    vec4 intersection; // vec4(normal.xyz, distance)\n    int which_object = find_intersection(ray_pos, ray, 0, 0, intersection);\n\n    if (which_object == 0) {\n        return vec3(0.0, 0.0, 0.0);\n    } else {\n        return get_random_color(which_object, intersection.xyz);\n    }\n}\n","bidirectional_tracer_1_light_vertex.glsl":"#include \"parameters\"\n#include \"scene\"\n#include \"rand\"\n#include \"camera\"\n#include \"shading\"\n#include \"util/random_helpers.glsl\"\n\n// tracer parameters\n#ifndef N_BOUNCES\n#define N_BOUNCES 4\n#endif\n\n#define HEURISTIC_BALANCE 1\n#define HEURISTIC_POWER 2\n#define HEURISTIC_MAX 3\n#define HEURISTIC_EQUAL 4\n#define HEURISTIC_PATH_TRACER 5\n#define HEURISTIC_DIRECT_ONLY 6\n\n#ifndef WEIGHTING_HEURISTIC\n#define WEIGHTING_HEURISTIC HEURISTIC_POWER\n#endif\n\n#if WEIGHTING_HEURISTIC == HEURISTIC_PATH_TRACER\n#define weight1(a,b) 1.0\n#define weight2(a,b) 0.0\n#elif WEIGHTING_HEURISTIC == HEURISTIC_DIRECT_ONLY\n#define weight1(a,b) 0.0\n#define weight2(a,b) 1.0\n#else\nfloat weight1(float p1, float p2) {\n#if WEIGHTING_HEURISTIC == HEURISTIC_EQUAL\n    return 0.5;\n#elif WEIGHTING_HEURISTIC == HEURISTIC_BALANCE\n    return p1 / (p1 + p2); // balance heuristic\n#elif WEIGHTING_HEURISTIC == HEURISTIC_POWER\n    return p1*p1 / (p1*p1 + p2*p2); // power heuristic (2)\n#elif WEIGHTING_HEURISTIC == HEURISTIC_MAX\n    return p1 > p2 ? 1.0 : 0.0; // maximum heuristic\n#endif\n}\n#define weight2 weight1\n#endif\n\nbool check_visibility(vec3 pos, vec3 shadow_ray, vec3 normal, vec3 light_normal, int which_object, int light_object) {\n    vec4 shadow_isec;\n    if (dot(shadow_ray, normal) > 0.0 &&\n        dot(shadow_ray, light_normal) < 0.0 &&\n        which_object != light_object)\n    {\n        vec4 shadow_isec;\n        int shadow_object = find_intersection(pos, shadow_ray, which_object, 0, shadow_isec);\n        return shadow_object == 0 || shadow_object == light_object;\n    }\n    return false;\n}\n\nvec3 render(vec2 xy, vec2 resolution) {\n    rand_state rng;\n    rand_init(rng);\n\n    vec3 ray_pos;\n    vec3 ray;\n    get_camera_ray(xy, resolution, ray_pos, ray, rng);\n    vec3 ray_color = vec3(1.0, 1.0, 1.0);\n\n    const vec3 zero_vec3 = vec3(0.0, 0.0, 0.0);\n    int prev_object = 0; // assumed to be OBJ_NONE\n    int inside_object = 0;\n    vec3 result_color = zero_vec3;\n\n    float last_sampling_prob = 0.0;\n\n    vec3 light_point, light_normal;\n    float light_sample_area_probability;\n    int light_object = select_light(light_point, light_normal, light_sample_area_probability, rng);\n    color_type light_emission;\n\n    get_emission(get_material_id(light_object), light_emission);\n    color_type color;\n\n    float choice_sample = rand_next_uniform(rng);\n\n    for (int bounce = 0; bounce <= N_BOUNCES; ++bounce)  {\n        vec4 intersection; // vec4(normal.xyz, distance)\n        int which_object = find_intersection(ray_pos, ray, prev_object, inside_object, intersection);\n\n        if (which_object == 0) {\n            ray_color = zero_vec3;\n        } else {\n            vec3 normal = intersection.xyz;\n            ray_pos += intersection.w * ray;\n            int material_id = get_material_id(which_object);\n\n            if (get_emission(material_id, color)) {\n                float change_of_variables = -dot(normal, ray) / (intersection.w*intersection.w);\n                float probThis, probOther;\n\n                if (last_sampling_prob > 0.0 && has_sampler(which_object)) {\n                  probThis = change_of_variables * last_sampling_prob;\n                  probOther = light_sample_area_probability;\n                } else {\n                    probOther = 0.0;\n                    probThis = 1.0;\n                }\n                result_color += ray_color * color * weight1(probThis, probOther);\n            }\n\n            bool going_out = which_object == inside_object;\n            if (going_out) {\n                normal = -normal;\n            }\n\n            vec3 ray_in = ray;\n            last_sampling_prob = sample_ray_and_prob(material_id, going_out, normal, ray, color, rng);\n            float cur_sample_weight = color2prob(color)*(ray_color.x + ray_color.y + ray_color.z) / 3.0;\n            if (last_sampling_prob == 0.0 || cur_sample_weight > MAX_SAMPLE_WEIGHT) break;\n\n            if (last_sampling_prob > 0.0 && bounce < N_BOUNCES && inside_object == 0) {\n                // no lights inside transparent objects supported\n                vec3 shadow_ray = light_point - ray_pos;\n                float shadow_dist = length(shadow_ray);\n                shadow_ray *= 1.0 / shadow_dist;\n\n                if (check_visibility(ray_pos, shadow_ray, normal, light_normal, which_object, light_object)) {\n                    float change_of_variables = -dot(light_normal, shadow_ray) / (shadow_dist*shadow_dist);\n\n                    // = dot(normal, shadow_ray) / M_PI\n                    float prob_sampling = sampling_pdf(material_id, going_out, normal, ray_in, shadow_ray);\n\n                    // multiple importance sampling probabilities of different strategies\n                    float probThis = light_sample_area_probability;\n                    float probOther = change_of_variables * prob_sampling;\n\n                    color_type contribution = brdf_cos_weighted(material_id, going_out, normal, ray_in, shadow_ray);\n                    color_type f_over_p = contribution * change_of_variables / probThis;\n                    result_color += ray_color * light_emission * f_over_p * weight2(probThis, probOther);\n                }\n            } else {\n                last_sampling_prob = 0.0;\n            }\n            ray_color *= color;\n\n            if (dot(ray, normal) < 0.0) {\n                if (going_out) {\n                    // normal = -normal (not used)\n                    inside_object = 0;\n                }\n                else inside_object = which_object;\n            }\n\n            prev_object = which_object;\n        }\n    }\n    return result_color;\n}\n","direct_light_diffuse_shader.glsl":"#include \"scene\"\n#include \"rand\"\n#include \"camera\"\n\n#ifndef BRIGHTNESS\n#define BRIGHTNESS 1.5\n#endif\n\nvec3 render(vec2 xy, vec2 resolution) {\n    rand_state rng;\n    rand_init(rng);\n\n    const vec3 light_dir = normalize(vec3(1.0, 2.0, 3.0));\n\n    vec3 ray_pos;\n    vec3 ray;\n    get_camera_ray(xy, resolution, ray_pos, ray, rng);\n\n    // find intersection\n    vec4 intersection; // vec4(normal.xyz, distance)\n    int which_object = find_intersection(ray_pos, ray, 0, 0, intersection);\n    vec3 ray_color = vec3(1,1,1) * BRIGHTNESS;\n\n    if (which_object == 0) {\n        return vec3(0.0, 0.0, 0.0);\n    } else {\n        return ray_color * get_diffuse(get_material_id(which_object)) * max(0.0, dot(intersection.xyz, light_dir));\n    }\n}\n"},"mains":{"monte_carlo.glsl":"#include \"parameters\"\n#include \"renderer\"\n\nuniform vec2 resolution;\nuniform float frame_number;\nuniform sampler2D base_image;\n\nvoid main() {\n    vec3 cur_color = render(gl_FragCoord.xy, resolution);\n    vec3 base_color = texture2D(base_image, gl_FragCoord.xy / resolution.xy).xyz;\n    gl_FragColor = vec4(base_color + (cur_color - base_color)/(frame_number+1.0), 1.0);\n}\n","single_pass.glsl":"#include \"parameters\"\n#include \"renderer\"\n\nuniform vec2 resolution;\n\nvoid main() {\n    gl_FragColor = vec4(render(gl_FragCoord.xy, resolution), 1.0);\n}\n"},"templates":{"fixed_camera.glsl.mustache":"#ifndef PINHOLE_CAMERA_INCLUDED\n#define PINHOLE_CAMERA_INCLUDED\n\nvoid get_pinhole_camera(out vec3 cam_pos, out vec3 cam_x, out vec3 cam_y, out vec3 cam_z, out float fov_angle) {\n  // define camera\n  fov_angle = {{fovAngleRad}};\n  const float cam_theta = {{thetaRad}};\n  const float cam_phi = {{phiRad}};\n  const float cam_dist = {{distance}};\n  vec3 camera_target = vec3({{targetList}});\n\n  cam_z = vec3(cos(cam_theta), sin(cam_theta), 0.0);\n  cam_x = vec3(cam_z.y, -cam_z.x, 0.0);\n  cam_z = cos(cam_phi)*cam_z + vec3(0,0,-sin(cam_phi));\n  cam_y = cross(cam_x, cam_z);\n  cam_pos = -cam_z * cam_dist + camera_target;\n}\n\nfloat get_aperture_size() { return {{apertureSize}}; }\nfloat get_focus_distance() { return {{focusDistance}}; }\n\n#endif\n","texture_geometry.glsl.mustache":"#include \"util/math.glsl\"\n\n{{#tracers}}\n{{{code}}}\n{{/tracers}}\n\nuniform sampler2D position_texture;\nuniform sampler2D rotation_texture;\nuniform sampler2D parameter_texture;\n\nint find_intersection(vec3 ray_pos, vec3 ray, int prev_object, int inside_object, out vec4 intersection) {\n    int which_object = 0;\n    {{#tracers}}\n    for (int cur_id={{minObjectId}}; cur_id <= {{maxObjectId}}; ++cur_id) {\n        bool inside = inside_object == cur_id;\n        bool prev_self = prev_object == cur_id;\n        if (inside || !prev_self {{^convex}}|| true{{/convex}}) {\n            float tex_coord = float(cur_id-1) / float({{nObjects}}-1);\n            vec3 object_pos = texture2D(position_texture, vec2(tex_coord, 0.0)).xyz;\n            vec3 rel_pos = ray_pos - object_pos;\n            vec3 rotated_ray = ray;\n\n            {{#anyRotated}}\n            mat3 rotation = mat3(\n              texture2D(rotation_texture, vec2(tex_coord, 0.0)).xyz,\n              texture2D(rotation_texture, vec2(tex_coord, 0.5)).xyz,\n              texture2D(rotation_texture, vec2(tex_coord, 1.0)).xyz);\n\n            rel_pos = rel_pos * rotation;\n            rotated_ray = ray * rotation;\n            {{/anyRotated}}\n\n            vec4 parameters = texture2D(parameter_texture, vec2(tex_coord, 0.0));\n            vec4 cur_isec = {{name}}(rel_pos, rotated_ray{{^noInside}}, inside{{/noInside}}{{^convex}}, prev_self{{/convex}} {{parameterListLeadingComma}});\n            if (cur_isec.w > 0.0 && (cur_isec.w < intersection.w || which_object == 0)) {\n                intersection = cur_isec;\n                {{#anyRotated}}\n                intersection.xyz = rotation * intersection.xyz;\n                {{/anyRotated}}\n                which_object = cur_id;\n            }\n        }\n    }\n    {{/tracers}}\n    return which_object;\n}\n","select_light.glsl.mustache":"#include \"rand\"\n#ifndef DISABLE_LIGHT_SAMPLING\n\n{{#uniqueSamplers}}\n{{{.}}}\n{{/uniqueSamplers}}\n\n// for bidirectional tracing\nint select_light(out vec3 light_point, out vec3 light_normal, out float sample_prob_density_per_area, inout rand_state rng) {\n      {{#lights.0}}\n      // This should work assuming the different lights have similar intensity\n      float totalArea = 0.0\n      {{#lights}}\n        + {{getAreaName}}({{parameterList}})\n      {{/lights}}\n      ;\n      if (totalArea <= 0.0) return 0;\n      sample_prob_density_per_area = 1.0 / totalArea;\n\n      float choice = rand_next_uniform(rng) * totalArea;\n      float area;\n\n      {{#lights}}\n      area = {{getAreaName}}({{parameterList}});\n      if (choice < area) {\n        {{samplerName}}(rng, light_point, light_normal {{parameterListLeadingComma}});\n        {{#hasRotation}}\n        const mat3 rotation = mat3({{rotationList}});\n        light_point = rotation * light_point;\n        light_normal = rotation * light_normal;\n        {{/hasRotation}}\n        light_point += vec3({{posList}});\n        return {{id}};\n      }\n      choice -= area;\n      {{/lights}}\n      {{/lights.0}}\n      return 0;\n}\n\nbool has_sampler(int which_object) {\n    {{#lights}}\n    if (which_object == {{id}}) return true;\n    {{/lights}}\n    return false;\n}\n\n#endif\n","geometry.glsl.mustache":"#include \"util/math.glsl\"\n\n{{#tracers}}\n{{{code}}}\n{{/tracers}}\n\nint find_intersection(vec3 ray_pos, vec3 ray, int prev_object, int inside_object, out vec4 intersection) {\n    int which_object = 0, cur_id;\n    vec4 cur_isec;\n    vec3 rel_pos;\n    bool inside;\n    bool prev_self;\n    vec3 rotated_ray;\n\n    {{#objects}}\n    cur_id = {{id}};\n    inside = inside_object == cur_id;\n    prev_self = prev_object == cur_id;\n    if (inside || !prev_self {{^convex}}|| true{{/convex}}) {\n      rel_pos = ray_pos - vec3({{posList}});\n      rotated_ray = ray;\n      {{#hasRotation}}\n      const mat3 rotation = mat3({{rotationList}});\n      rel_pos = rel_pos * rotation;\n      rotated_ray = ray * rotation;\n      {{/hasRotation}}\n      cur_isec = {{tracerName}}(rel_pos, rotated_ray{{^noInside}}, inside{{/noInside}}{{^convex}}, prev_self{{/convex}} {{parameterListLeadingComma}});\n      if (cur_isec.w > 0.0 && (cur_isec.w < intersection.w || which_object == 0)) {\n          intersection = cur_isec;\n          {{#hasRotation}}\n          intersection.xyz = rotation * intersection.xyz;\n          {{/hasRotation}}\n          which_object = cur_id;\n      }\n    }\n    {{/objects}}\n    return which_object;\n}\n","texture_materials.glsl.mustache":"#define color_type {{colorType}}\nfloat color2prob(color_type c) { return {{{colorToProb}}}; }\n\nuniform sampler2D material_id_texture;\nuniform sampler2D emission_texture;\n\nint get_material_id(int which_object) {\n    return int(texture2D(material_id_texture, vec2(float(which_object)/float({{maxObjectId}}), 0.5)).x + 0.5);\n}\n\nbool get_emission(int material_id, out color_type emission) {\n  vec4 val = texture2D(emission_texture, vec2(float(material_id)/float({{nMaterials}}-1), 0.5));\n  emission = val.{{vectorMember}};\n  return (val.x + val.y + val.z) > 0.0; // works with both RGB and grayscale\n}\n\n{{#properties}}\nuniform sampler2D {{name}}_texture;\n{{type}} get_{{name}}(int material_id) {\n  return texture2D({{name}}_texture, vec2(float(material_id)/float({{nMaterials}}-1), 0.5)).{{vectorMember}};\n}\n{{/properties}}\n","if_else_materials.glsl.mustache":"#define color_type {{colorType}}\nfloat color2prob(color_type c) { return {{{colorToProb}}}; }\n\nbool get_emission(int which_obj, out color_type emission) {\n  {{#materialEmissions}}\n  {{^first}}else {{/first}}if (false\n    {{#objects}}\n    || which_obj == {{id}}\n    {{/objects}}) {\n    emission = {{value}};\n    return true;\n  }\n  {{/materialEmissions}}\n  return false;\n}\n\n{{#properties}}\n{{type}} get_{{name}}(int which_obj) {\n  {{#materials}}\n  {{^first}}else {{/first}}if (false\n    {{#objects}}\n    || which_obj == {{id}}\n    {{/objects}}) {\n    return {{value}};\n  }\n  {{/materials}}\n  return {{default}};\n}\n{{/properties}}\n\n#define get_material_id(x) x\n"},"scene":{"test.glsl":"#include \"surfaces/sphere.glsl\"\n#include \"surfaces/box_interior.glsl\"\n#include \"util/math.glsl\"\n#include \"rand\"\n\n// secene geometry\n#define OBJ_NONE 0\n#define OBJ_SPHERE_1 1\n#define OBJ_SPHERE_2 2\n#define OBJ_BOX 3\n#define OBJ_LIGHT_1 4\n#define OBJ_LIGHT_2 5\n#define N_OBJECTS 6\n\n#define N_LIGHTS 2\n\n#define ROOM_H 2.0\n#define ROOM_W 5.0\n\n#define sphere_1_pos vec3(0.0, 0.0, 0.5)\n#define sphere_1_r 0.5\n#define sphere_2_pos vec3(-1.1, 0.3, 0.25)\n#define sphere_2_r 0.25\n\n#define BOX_SIZE (vec3(ROOM_W, ROOM_W, ROOM_H)*0.5)\n#define BOX_CENTER vec3(0.0, 0.0, ROOM_H*0.5)\n\n#define light_r 0.4\n\n#define light_1_pos vec3(-ROOM_W*0.5, 0.0, ROOM_H)\n#define light_2_pos vec3(0.0, ROOM_W*0.5, ROOM_H)\n\n// materials\n#define light_1_emission vec3(0.8, 0.8, 1.0)*100.0;\n#define light_2_emission vec3(1.0, 0.8, 0.6)*100.0;\n\n#define sphere_1_diffuse vec3(.5, .8, .9) * 0.5\n#define box_diffuse vec3(1., 1., 1.)*.7 * 0.5\n\n// helpers\n#define UNIT_SPHERE_AREA (4.0*M_PI)\n#define ZERO_VEC3 vec3(0.0, 0.0, 0.0)\n\nint find_intersection(vec3 ray_pos, vec3 ray, int prev_object, int inside_object, out vec4 intersection) {\n    int which_object = OBJ_NONE;\n    vec4 cur_isec;\n    vec3 rel_pos;\n    bool inside;\n\n    inside = inside_object == OBJ_SPHERE_1;\n    if (inside || prev_object != OBJ_SPHERE_1) {\n        rel_pos = ray_pos - sphere_1_pos;\n        cur_isec = sphere_intersection(rel_pos, ray, inside, sphere_1_r);\n        if (cur_isec.w > 0.0) {\n            intersection = cur_isec;\n            which_object = OBJ_SPHERE_1;\n        }\n    }\n\n    inside = inside_object == OBJ_SPHERE_2;\n    if (inside || prev_object != OBJ_SPHERE_2) {\n        rel_pos = ray_pos - sphere_2_pos;\n        cur_isec = sphere_intersection(rel_pos, ray, inside, sphere_2_r);\n        if (cur_isec.w > 0.0 && (cur_isec.w < intersection.w || which_object == OBJ_NONE)) {\n            intersection = cur_isec;\n            which_object = OBJ_SPHERE_2;\n        }\n    }\n\n    // The box interior is non-convex and can handle that.\n    // \"Inside\" not supported here\n    rel_pos = ray_pos - BOX_CENTER;\n    cur_isec = box_interior_intersection(rel_pos, ray, false, BOX_SIZE);\n    if (cur_isec.w > 0.0 && (cur_isec.w < intersection.w || which_object == OBJ_NONE)) {\n        intersection = cur_isec;\n        which_object = OBJ_BOX;\n    }\n\n    inside = inside_object == OBJ_LIGHT_1;\n    if (inside || prev_object != OBJ_LIGHT_1) {\n        rel_pos = ray_pos - light_1_pos;\n        cur_isec = sphere_intersection(rel_pos, ray, inside, light_r);\n        if (cur_isec.w > 0.0 && (cur_isec.w < intersection.w || which_object == OBJ_NONE)) {\n            intersection = cur_isec;\n            which_object = OBJ_LIGHT_1;\n        }\n    }\n\n    inside = inside_object == OBJ_LIGHT_2;\n    if (inside || prev_object != OBJ_LIGHT_2) {\n        rel_pos = ray_pos - light_2_pos;\n        cur_isec = sphere_intersection(rel_pos, ray, inside, light_r);\n        if (cur_isec.w > 0.0 && (cur_isec.w < intersection.w || which_object == OBJ_NONE)) {\n            intersection = cur_isec;\n            which_object = OBJ_LIGHT_2;\n        }\n    }\n\n    return which_object;\n}\n\nbool get_emission(int which_obj, out vec3 emission) {\n  if (which_obj == OBJ_LIGHT_1) {\n    emission = light_1_emission;\n  } else if (which_obj == OBJ_LIGHT_2) {\n    emission = light_2_emission;\n  } else {\n    emission = ZERO_VEC3;\n    return false;\n  }\n  emission *= 1.0 / (UNIT_SPHERE_AREA * light_r * light_r);\n  return true;\n}\n\nvec3 get_diffuse(int which_object) {\n  if (which_object == OBJ_SPHERE_1 || which_object == OBJ_SPHERE_2) {\n    return sphere_1_diffuse;\n  } else if (which_object == OBJ_BOX) {\n    return box_diffuse;\n  } else {\n    return ZERO_VEC3;\n  }\n}\n\nfloat get_reflectivity(int which_object) {\n  if (which_object == OBJ_SPHERE_2) {\n    return 0.1;\n  } else {\n    return 0.0;\n  }\n}\n\nfloat get_transparency(int which_object) {\n  if (which_object == OBJ_SPHERE_2) {\n    return 1.0; // sampled after reflectivity\n  }\n  return 0.0;\n}\n\n// index of refraction\nfloat get_ior(int which_object) {\n  if (which_object == OBJ_SPHERE_2) {\n    return 1.5;\n  }\n  return 1.0;\n}\n\n#ifndef PINHOLE_CAMERA_INCLUDED\n#define PINHOLE_CAMERA_INCLUDED\n\nvoid get_pinhole_camera(out vec3 cam_pos, out vec3 cam_x, out vec3 cam_y, out vec3 cam_z, out float fov_angle) {\n  // define camera\n  fov_angle = DEG2RAD(50.0);\n  const float cam_theta = DEG2RAD(300.0);\n  const float cam_phi = DEG2RAD(5.0);\n  const float cam_dist = 2.6;\n  vec3 camera_target = vec3(-0.5, 0.0, 0.35);\n\n  cam_z = vec3(cos(cam_theta), sin(cam_theta), 0.0);\n  cam_x = vec3(cam_z.y, -cam_z.x, 0.0);\n  cam_z = cos(cam_phi)*cam_z + vec3(0,0,-sin(cam_phi));\n  cam_y = cross(cam_x, cam_z);\n  cam_pos = -cam_z * cam_dist + camera_target;\n}\n\n#endif\n\n// for bidirectional tracing\nint select_light(out vec3 light_point, out vec3 light_normal, out float sample_prob_density_per_area, inout rand_state rng) {\n      light_normal = normalize(rand_next_gauss3(rng));\n      light_point = light_normal * light_r;\n      sample_prob_density_per_area = 1.0 / (UNIT_SPHERE_AREA*light_r*light_r * float(N_LIGHTS));\n\n      int light_object = OBJ_NONE;\n      if (rand_next_uniform(rng) > 0.5) {\n        light_point += light_1_pos;\n        light_object = OBJ_LIGHT_1;\n      } else {\n        light_point += light_2_pos;\n        light_object = OBJ_LIGHT_2;\n      }\n\n      return light_object;\n}\n","moving_camera.glsl":"uniform vec2 mouse;\n\n#include \"util/math.glsl\"\n#define PINHOLE_CAMERA_INCLUDED\n\nvoid get_pinhole_camera(out vec3 cam_pos, out vec3 cam_x, out vec3 cam_y, out vec3 cam_z, out float fov_angle) {\n  // define camera\n  fov_angle = DEG2RAD(50.0);\n  float cam_theta = DEG2RAD(300.0 + (mouse.x-0.5)*360.0);\n  float cam_phi = DEG2RAD(20.0 + (mouse.y-0.5)*50.0);\n  const float cam_dist = 2.6;\n  vec3 camera_target = vec3(-0.5, 0.0, 0.35);\n\n  cam_z = vec3(cos(cam_theta), sin(cam_theta), 0.0);\n  cam_x = vec3(cam_z.y, -cam_z.x, 0.0);\n  cam_z = cos(cam_phi)*cam_z + vec3(0,0,-sin(cam_phi));\n  cam_y = cross(cam_x, cam_z);\n  cam_pos = -cam_z * cam_dist + camera_target;\n}\n\n#include \"scene/test.glsl\"\n"},"rand":{"none.glsl":"// dummy / none rand\n#define rand_state int\n\nvoid rand_init(out rand_state state) {}\n\nvec4 rand_next_gauss4(inout rand_state state) {\n    return vec4(0.0, 0.0, 0.0, 1.0);\n}\n\nvec3 rand_next_gauss3(inout rand_state state) {\n    return rand_next_gauss4(state).xyz;\n}\n\nfloat rand_next_uniform(inout rand_state state) {\n    return 0.0;\n}\n","fixed_vecs.glsl":"// silly PRNG\nuniform vec4 random_gauss_1, random_gauss_2, random_gauss_3,\n             random_gauss_4, random_gauss_5, random_gauss_6,\n             random_gauss_7, random_gauss_8;\nuniform vec4 random_uniforms_1, random_uniforms_2, random_uniforms_3,\n             random_uniforms_4, random_uniforms_5, random_uniforms_6,\n             random_uniforms_7, random_uniforms_8;\n\nstruct rand_state {\n    int index_uniform;\n    int index_gauss4;\n};\n\nvoid rand_init(out rand_state state) {\n    state.index_uniform = 0;\n    state.index_gauss4 = 0;\n}\n\nvec4 rand_next_gauss4(inout rand_state state) {\n    state.index_gauss4++;\n    int c = state.index_gauss4;\n    if (c == 1) return random_gauss_1;\n    if (c == 2) return random_gauss_2;\n    if (c == 3) return random_gauss_3;\n    if (c == 4) return random_gauss_4;\n    if (c == 5) return random_gauss_5;\n    if (c == 6) return random_gauss_6;\n    if (c == 7) return random_gauss_7;\n    if (c == 8) return random_gauss_8;\n    //abort(); // ???\n    return vec4(0.0, 0.0, 0.0, 0.0);\n}\n\nvec3 rand_next_gauss3(inout rand_state state) {\n    return rand_next_gauss4(state).xyz;\n}\n\nfloat rand_next_uniform(inout rand_state state) {\n    int vec_number = state.index_uniform / 4;\n    int component = state.index_uniform - vec_number * 4;\n    state.index_uniform++;\n    vec4 vec;\n    if (vec_number == 0) vec = random_uniforms_1;\n    else if (vec_number == 1) vec = random_uniforms_2;\n    else if (vec_number == 2) vec = random_uniforms_3;\n    else if (vec_number == 3) vec = random_uniforms_4;\n    else if (vec_number == 4) vec = random_uniforms_5;\n    else if (vec_number == 5) vec = random_uniforms_6;\n    else if (vec_number == 6) vec = random_uniforms_7;\n    else if (vec_number == 7) vec = random_uniforms_8;\n    //else abort(); // ???\n\n    if (component == 0) return vec.x;\n    if (component == 1) return vec.y;\n    if (component == 2) return vec.z;\n    if (component == 3) return vec.w;\n}\n","textures.glsl":"// sampler 1D not supported by WebGL\nuniform sampler2D random_gauss;\nuniform sampler2D random_uniform;\nuniform int n_random_gauss;\nuniform int n_random_uniform;\n\nstruct rand_state {\n    int index_uniform;\n    int index_gauss;\n};\n\nvoid rand_init(out rand_state state) {\n    state.index_uniform = 0;\n    state.index_gauss = 0;\n}\n\nvec4 rand_next_gauss4(inout rand_state state) {\n    state.index_gauss++;\n    return texture2D(random_gauss,\n      vec2(float(state.index_gauss-1)/float(n_random_gauss), 0.0));\n}\n\nvec3 rand_next_gauss3(inout rand_state state) {\n    return rand_next_gauss4(state).xyz;\n}\n\nfloat rand_next_uniform(inout rand_state state) {\n    state.index_uniform++;\n    return texture2D(random_uniform,\n      vec2(float(state.index_uniform-1)/float(n_random_uniform), 0.0)).x;\n}\n"},"camera":{"pinhole.glsl":"#include \"scene\"\n#include \"util/camera_helpers.glsl\"\n\nvoid get_camera_ray(vec2 screen_pos, vec2 resolution, out vec3 ray_pos, out vec3 ray, inout rand_state rng) {\n    vec3 cam_pos, cam_x, cam_y, cam_z;\n    float fov_angle;\n\n    get_pinhole_camera(cam_pos, cam_x, cam_y, cam_z, fov_angle);\n\n    vec2 ccd_pos = get_ccd_pos(screen_pos, resolution, rng);\n    ray = normalize(ccd_pos.x*cam_x + ccd_pos.y*cam_y + 1.0/tan(fov_angle*0.5)*cam_z);\n    ray_pos = cam_pos;\n}\n","orthographic.glsl":"#include \"scene\"\n#include \"util/camera_helpers.glsl\"\n\nvoid get_camera_ray(vec2 screen_pos, vec2 resolution, out vec3 ray_pos, out vec3 ray, inout rand_state rng) {\n    vec3 cam_pos, cam_x, cam_y, cam_z;\n    float fov_angle;\n\n    get_pinhole_camera(cam_pos, cam_x, cam_y, cam_z, fov_angle);\n\n    vec2 ccd_pos = get_ccd_pos(screen_pos, resolution, rng);\n    float ccd_size = get_focus_distance() * tan(fov_angle*0.5);\n\n    ray_pos = cam_pos + (cam_x * ccd_pos.x + cam_y * ccd_pos.y) * ccd_size;\n    ray = cam_z;\n}\n","thin_lens.glsl":"#include \"scene\"\n#include \"util/camera_helpers.glsl\"\n\nvoid get_camera_ray(vec2 screen_pos, vec2 resolution, out vec3 ray_pos, out vec3 ray, inout rand_state rng) {\n    vec3 cam_pos, cam_x, cam_y, cam_z;\n    float fov_angle;\n\n    get_pinhole_camera(cam_pos, cam_x, cam_y, cam_z, fov_angle);\n    vec2 ccd_pos = get_ccd_pos(screen_pos, resolution, rng);\n    ray = normalize(ccd_pos.x*cam_x + ccd_pos.y*cam_y + 1.0/tan(fov_angle*0.5)*cam_z);\n\n    float focus = get_focus_distance();\n    float aperture = get_aperture_size();\n    vec3 focus_point = cam_pos + focus*ray;\n    vec2 aperture_sample = normalize(rand_next_gauss3(rng).xy) * sqrt(rand_next_uniform(rng));\n    ray_pos = cam_pos + (aperture_sample.x * cam_x + aperture_sample.y * cam_y) * aperture;\n    ray = normalize(focus_point - ray_pos);\n}\n"},"surfaces":{"box.glsl":"vec4 box_intersection(vec3 pos, vec3 ray, bool inside, vec3 box_size) {\n    float s = 1.0;\n    if (inside) s = -1.0;\n    vec3 corner = pos + s*box_size*sign(ray); // - box_center; <-- assumed to be 0\n    vec3 dists = -corner / ray;\n\n    // handle corner cases (especially with orthogonal cameras)\n    float no_isec_dist = -1.0;\n    if (inside) no_isec_dist = 1e10;\n    if (ray.x == 0.0) dists.x = no_isec_dist;\n    if (ray.y == 0.0) dists.y = no_isec_dist;\n    if (ray.z == 0.0) dists.z = no_isec_dist;\n\n    float dist;\n    if (inside) {\n      dist = min(dists.x, min(dists.y, dists.z));\n    } else {\n      dist = max(dists.x, max(dists.y, dists.z));\n    }\n\n    vec3 normal = vec3(0.0, 0.0, 1.0);\n    if (dist == dists.x) normal = vec3(1.0, 0.0, 0.0);\n    else if (dist == dists.y) normal = vec3(0.0, 1.0, 0.0);\n\n    if (!inside) {\n      vec3 isec_pos = pos + ray*dist;\n      vec3 bounds = (box_size - abs(isec_pos)) * (1.0 - normal);\n      if (bounds.x < 0.0 || bounds.y < 0.0 || bounds.z < 0.0) return vec4(0,0,0,-1);\n    }\n\n    normal = normal * -s * sign(ray);\n    return vec4(normal, dist);\n}\n","dome.glsl":"// dome is just the interior of a sphere\nvec4 dome_intersection(vec3 pos, vec3 ray, float sphere_r) {\n    // ray-sphere-interior intersection\n    vec3 d = pos; // - sphere_pos; // <-- assumed to be origin\n\n    float dotp = dot(d,ray);\n    float c_coeff = dot(d,d) - sphere_r*sphere_r;\n    float ray2 = dot(ray, ray);\n    float discr = dotp*dotp - ray2*c_coeff;\n\n    float sqrt_discr = sqrt(discr);\n    float dist = -dotp + sqrt_discr;\n    dist /= ray2;\n    vec3 normal = (d + ray*dist) / sphere_r;\n\n    return vec4(normal, dist);\n}\n","plane.glsl":"vec4 plane_intersection(vec3 pos, vec3 ray, vec3 plane_normal) {\n    float d = dot(ray, plane_normal);\n    float dist = -dot(pos, plane_normal) / d;\n    vec3 normal = plane_normal * -sign(d);\n    return vec4(plane_normal, dist);\n}\n","samplers":{"sphere.glsl":"#include \"rand\"\n#include \"util/math.glsl\"\n\nvoid sphere_sample(inout rand_state rng, out vec3 pos, out vec3 normal, float radius) {\n    vec3 n = normalize(rand_next_gauss3(rng));\n    normal = n;\n    pos = n*radius;\n}\n\n#define get_sphere_area(radius) (4.0*M_PI*(radius)*(radius))\n","box.glsl":"#include \"rand\"\n#include \"util/math.glsl\"\n\nvoid box_sample(inout rand_state rng, out vec3 pos, out vec3 normal, vec3 sz) {\n\n    vec3 sides = vec3(sz.y*sz.z, sz.x*sz.z, sz.x*sz.y);\n    sides *= 1.0 / (sides.x + sides.y + sides.z);\n\n    float u = rand_next_uniform(rng)*2.0 - 1.0;\n    float v = rand_next_uniform(rng)*2.0 - 1.0;\n\n    float p = rand_next_uniform(rng);\n\n    bool side;\n\n    if (p < sides.x) {\n        side = p < sides.x * 0.5;\n        normal = vec3(1,0,0);\n        pos = vec3(1, u, v);\n    }\n    else {\n      p -= sides.x;\n      if (p < sides.y) {\n          side = p < sides.y * 0.5;\n          normal = vec3(0,1,0);\n          pos = vec3(u, 1, v);\n      }\n      else {\n          p -= sides.y;\n          side = p < sides.z * 0.5;\n          normal = vec3(0,0,1);\n          pos = vec3(u, v, 1);\n      }\n    }\n\n    pos *= sz;\n    if (side) {\n        normal = -normal;\n        pos = -pos;\n    }\n}\n\nfloat get_box_area(vec3 sz) {\n  return (sz.x*sz.y + sz.x*sz.z + sz.y*sz.z) * 8.0; // 8 = 2*2*2 \n}\n"},"sphere.glsl":"/**\n * @param ray_pos: ray origin\n * @param ray: ray direction (normalized)\n * @param is_inside: true if ray is inside this object\n * @rerturn vec4(outer_unit_normal, intersection_distance)\n */\nvec4 sphere_intersection(vec3 pos, vec3 ray, bool is_inside, float sphere_r) {\n    // ray-sphere intersection\n    vec3 d = pos; // - sphere_pos; // <-- assumed to be origin\n\n    float dotp = dot(d,ray);\n    float c_coeff = dot(d,d) - sphere_r*sphere_r;\n    float ray2 = dot(ray, ray);\n    float discr = dotp*dotp - ray2*c_coeff;\n\n    const vec4 NO_INTERSECTION = vec4(0.0, 0.0, 0.0, -1.0);\n    if (discr < 0.0) return NO_INTERSECTION;\n\n    float sqrt_discr = sqrt(discr);\n    float dist = -dotp - sqrt_discr;\n    if (is_inside) {\n      dist += sqrt_discr*2.0;\n    }\n    dist /= ray2;\n    vec3 normal = (d + ray*dist) / sphere_r;\n\n    return vec4(normal, dist);\n}\n","box_interior.glsl":"vec4 box_interior_intersection(vec3 pos, vec3 ray, bool inside, vec3 box_size) {\n    vec3 corner = box_size*sign(ray);\n    vec3 diff = pos - corner; // - box_center; <-- assumed to be 0\n    vec3 dists = -diff / ray;\n\n    const float MAX_DIST = 1e10;\n    if (ray.x == 0.0) dists.x = MAX_DIST;\n    if (ray.y == 0.0) dists.y = MAX_DIST;\n    if (ray.z == 0.0) dists.z = MAX_DIST;\n\n    vec3 normal = vec3(0.0, 0.0, 1.0);\n    float dist = min(dists.x, min(dists.y, dists.z));\n\n    if (dist == dists.x) normal = vec3(1.0, 0.0, 0.0);\n    else if (dist == dists.y) normal = vec3(0.0, 1.0, 0.0);\n\n    normal = normal * -sign(ray);\n    return vec4(normal, dist);\n}\n","half_space.glsl":"vec4 half_space_intersection(vec3 pos, vec3 ray, bool is_inside, vec3 plane_normal) {\n    float s = -dot(ray, plane_normal);\n    if ((dot(plane_normal, ray) > 0.0) != is_inside) return vec4(0,0,0,-1);\n    float dist = -dot(pos, plane_normal) / dot(ray,plane_normal);\n    return vec4(plane_normal, dist);\n}\n","distance_field.glsl.mustache":"\nfloat distance_field_func_{{distanceFieldId}}(vec3 p) {\n  {{{distanceFunctionCode}}}\n}\n\nvec3 distance_field_gradient_{{distanceFieldId}}(vec3 pos) {\n  const float eps = float({{gradientDelta}});\n  const vec3 dx = vec3(eps,0,0);\n  const vec3 dy = vec3(0,eps,0);\n  const vec3 dz = vec3(0,0,eps);\n  const float h = 0.5 / eps;\n\n  return vec3(\n    (distance_field_func_{{distanceFieldId}}(pos + dx) - distance_field_func_{{distanceFieldId}}(pos - dx)) * h,\n    (distance_field_func_{{distanceFieldId}}(pos + dy) - distance_field_func_{{distanceFieldId}}(pos - dy)) * h,\n    (distance_field_func_{{distanceFieldId}}(pos + dz) - distance_field_func_{{distanceFieldId}}(pos - dz)) * h\n  );\n}\n\nvec4 distance_field_intersection_{{distanceFieldId}}(vec3 pos, vec3 ray, bool is_inside, bool prev_self) {\n  const vec4 NO_INTERSECTION = vec4(0.0, 0.0, 0.0, -1.0);\n  const float distanceThreshold = float({{distanceThreshold}});\n  const float maxStepSize = float({{maxStepSize}});\n\n  {{#convex}}\n  if (!is_inside && prev_self) return NO_INTERSECTION;\n  {{/convex}}\n\n  float fieldSign = is_inside ? -1.0 : 1.0;\n  float totalDist = 0.0;\n\n  for (int i = 0; i < {{maxSteps}}; ++i) {\n    vec3 curPos = pos + ray*totalDist;\n    float dist = distance_field_func_{{distanceFieldId}}(curPos) * fieldSign;\n\n    if (dist > float({{escapeDistance}})) {\n      return NO_INTERSECTION;\n    }\n    if (dist < distanceThreshold) {\n      vec3 gradient = distance_field_gradient_{{distanceFieldId}}(curPos);\n\n      if (!prev_self || dot(gradient, ray)*fieldSign < 0.0) {\n        return vec4(normalize(gradient), totalDist);\n      }\n    }\n\n    if (dist < distanceThreshold) {\n      dist = distanceThreshold;\n    }\n\n    if (dist > maxStepSize) {\n      dist = maxStepSize;\n    }\n    totalDist += dist;\n  }\n\n  return NO_INTERSECTION;\n}\n"}};
+module.exports = {"shading":{"ggx.glsl":"#include \"rand\"\n#include \"scene\"\n#include \"util/math.glsl\"\n#include \"util/random_helpers.glsl\"\n#include \"shading/scattering.glsl\"\n\n/*\n * GGX-based microfacet model suitable for bidirectional tracing of\n * rough specular reflections\n */\n\nfloat ggx_D(vec3 n, vec3 m, float alpha) {\n    float mn = dot(m, n);\n    if (mn < 0.0) return 0.0;\n    float mn2 = mn*mn;\n    float a2 = alpha * alpha;\n    float den = 1.0 + mn2 * (a2 - 1.0); // = cos^2(theta)*(a2 + tan^2(theta))\n    if (den <= 0.0) return 0.0; // avoid numerical issues\n    return a2 / (M_PI * den * den);\n}\n\nfloat ggx_G1(vec3 v, vec3 m, vec3 n, float alpha) {\n    const float eps = 1e-4;\n    float vm = dot(v, m);\n    float vn = dot(v, n); // note: sign only depends on refraction vs reflection\n    if (sign(vm) * sign(vn) < 0.0) return 0.0; // vm/vn < 0.0\n    float vn2 = vn*vn;\n    float a2 = alpha*alpha;\n    // = 2 / (1 + sqrt(1 + alpha^2 tan^2(theta)))\n    //return 2.0 / (1.0 + sqrt(max(1.0 + alpha * alpha * (1.0 - vm2) / vm2, 0.0)));\n    return 2.0 / (1.0 + sqrt(max(a2 / vn2 + 1.0 - a2, 0.0)));\n}\n\ncolor_type fresnel_schlick_term(float cos_theta, color_type f0) {\n    return f0 + (1.0 - f0) * pow(1.0 - cos_theta, 5.0);\n}\n\nvec3 sample_ggx(vec3 normal, float alpha, inout rand_state rng) {\n    vec3 dir = rand_next_gauss3(rng);\n    // project to surface\n    dir = normalize(dir - dot(dir, normal)*normal);\n    float eta = rand_next_uniform(rng);\n    float theta = atan(alpha * sqrt(eta) / sqrt(1.0 - eta));\n    return normal * cos(theta) + dir * sin(theta);\n}\n\n// sample weight for GGX specular samples if used in unidirectional tracing\nfloat ggx_sample_weight(float alpha, vec3 normal, vec3 i, vec3 o, vec3 m) {\n    float G = ggx_G1(i, m, normal, alpha) * ggx_G1(o, m, normal, alpha);\n\n    // cos(theta) * bdrf / Fresnel / sampling_pdf\n    // cos(theta) * D * G  / (4.0 * |i.n| * |o.n|) / (D * |m.n| / (4.0 * |o.m|))\n    // cos(theta) * G * |o.m| / (|i.n| * |o.n| * |m.n|) // cos(theta) = |o.n|\n    // G * |o.m| / (|i.n| * |m.n|)   // |o.m| = |i.m| (half vector)\n    // G * |i.m| / (|i.n| * |i.n|)\n    return dot(i, m) * G  / (dot(i, normal) * dot(m, normal));\n    // f / p without Fresnel term\n}\n\nfloat sampling_pdf_ggx(int material_id, bool going_out, vec3 pos, vec3 normal, vec3 ray_in, vec3 ray_out) {\n    float alpha = get_roughness(material_id, pos);\n    vec3 m = normalize(-ray_in + ray_out);\n    float D = ggx_D(normal, m, alpha);\n\n    float ch_vars = 1.0 / (4.0 * dot(ray_out, m));\n    return D * dot(m, normal) * ch_vars;\n}\n\ncolor_type brdf_cos_weighted(int material_id, bool going_out, vec3 pos, vec3 normal, vec3 ray_in, vec3 ray_out) {\n    color_type specular;\n    color_type reflection_color = get_reflectivity(material_id, pos);\n    color_type diffuse = get_diffuse(material_id, pos) / M_PI;\n    if (color2prob(reflection_color) > 0.0) {\n        vec3 m = normalize(-ray_in + ray_out);\n        float alpha = get_roughness(material_id, pos);\n\n        float cosT = max(min(dot(ray_out, m), 1.0), 0.0);\n        color_type F = fresnel_schlick_term(cosT, reflection_color);\n        float G = ggx_G1(-ray_in, m, normal, alpha) * ggx_G1(ray_out, m, normal, alpha);\n        float D = ggx_D(normal, m, alpha);\n\n        specular = F * D * G / (4.0 * dot(ray_out, m) * dot(-ray_in, normal));\n        // note: this is not mathematically exact for the microfacet model:\n        // should be something like \\int (1.0 - F(m)) p(m) dm over all\n        // microfacet normals m, but seems to look fine\n        diffuse *= (1.0 - F);\n    } else {\n        specular = reflection_color; // = 0\n    }\n    return (specular + diffuse) * dot(ray_out, normal);\n}\n\nfloat get_specular(int material_id, vec3 pos) {\n    float r = color2prob(get_reflectivity(material_id, pos));\n    float t = color2prob(get_transparency(material_id, pos));\n    float d = color2prob(get_diffuse(material_id, pos));\n    float shininess = 1.0 - (1.0 - r) * (1.0 - t);\n    float diffuse = d * (1.0 - shininess);\n    float den = shininess + diffuse;\n    if (den <= 0.0) return 0.0;\n    return shininess / (shininess +  diffuse);\n}\n\nfloat sampling_pdf(int material_id, bool going_out, vec3 pos, vec3 normal, vec3 ray_in, vec3 ray_out) {\n    float specular = get_specular(material_id, pos);\n    return specular * sampling_pdf_ggx(material_id, going_out, pos, normal, ray_in, ray_out) +\n      (1.0 - specular) * dot(normal, ray_out) / M_PI; // lambert\n}\n\nfloat sample_ray_and_prob(int material_id, bool going_out, vec3 pos, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {\n    float specular = get_specular(material_id, pos);\n    vec3 ray_in = ray;\n\n    float extra_weight = 1.0;\n\n    if (rand_next_uniform(rng) < specular) {\n      float alpha = get_roughness(material_id, pos);\n\n      // microfacet normal\n      vec3 m = sample_ggx(normal, alpha, rng);\n\n      color_type F = fresnel_schlick_term(\n        max(min(dot(-ray_in, m), 1.0), 0.0), // cos(theta)\n        get_reflectivity(material_id, pos));\n\n      color_type transparency = (1.0 - F)*get_transparency(material_id, pos);\n      float transmission_prob = color2prob(transparency);\n\n      bool selected_transmission = rand_next_uniform(rng) < transmission_prob;\n      if (selected_transmission) {\n          F = transparency / transmission_prob;\n\n          // refraction\n          float eta = 1.0 / get_ior(material_id, pos);\n\n          if (going_out) {\n            // simplification: \"out\" of any object is always vacuum\n            // and no nested transparent objects are supported\n            eta = 1.0 / eta;\n          }\n\n          // see https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/refract.xhtml\n          // Snell's law for refraction\n          float d = dot(m, ray);\n          float k = 1.0 - eta*eta * (1.0 - d*d);\n          if (k < 0.0) {\n              // total reflection\n              ray = ray - 2.0*d*m;\n          } else {\n              ray = eta * ray - (eta * d + sqrt(k)) * m;\n          }\n      } else {\n          extra_weight = 1.0 / (1.0 - transmission_prob);\n          F *= extra_weight;\n\n          // reflection\n          ray = ray - 2.0*dot(m, ray)*m;\n      }\n\n      // perfectly shiny surface cannot use bidirectional tracing\n      // also using unidirectional shading for refraction (for simplicity)\n      if (alpha <= 0.0 || selected_transmission) {\n          float w = ggx_sample_weight(alpha, normal, -ray_in, ray, m);\n          if (w <= 0.0) return 0.0;\n          weight = w * F;\n          return -1.0;\n      }\n    } else {\n      ray = get_random_cosine_weighted(normal, rng);\n    }\n\n    float pdf = sampling_pdf(material_id, going_out, pos, normal, ray_in, ray);\n    if (pdf <= 0.0) return 0.0;\n    weight = extra_weight * brdf_cos_weighted(material_id, going_out, pos, normal, ray_in, ray) / pdf;\n    return pdf;\n}\n\nbool sample_ray(int material_id, bool going_out, vec3 pos, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {\n    return sample_ray_and_prob(material_id, going_out, pos, normal, ray, weight, rng) != 0.0;\n}\n","simple.glsl":"#include \"rand\"\n#include \"scene\"\n#include \"util/math.glsl\"\n#include \"util/random_helpers.glsl\"\n#include \"shading/scattering.glsl\"\n\nbool color_prob_choice(color_type color, out color_type out_color, inout float choice_sample) {\n    float p = color2prob(color);\n    if (random_choice(p, choice_sample)) {\n        out_color = color / p;\n        return true;\n    }\n    return false;\n}\n\nbool sample_specular(int material_id, bool going_out, vec3 pos, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {\n    float choice_sample = rand_next_uniform(rng);\n    float roughness = get_roughness(material_id, pos);\n\n    vec3 n = normal;\n\n    // simple \"roughness\" handling\n    if (roughness >= 0.0) {\n        // sample microsurface normal\n        n = normalize(n + rand_next_gauss3(rng)*roughness);\n    }\n\n    if (color_prob_choice(get_reflectivity(material_id, pos), weight, choice_sample)) {\n        // full reflection\n        ray = ray - 2.0*dot(n, ray)*n;\n\n        // check with original normal, needed to prevent light leak into\n        // opaque objects\n        if (dot(ray, normal) < 0.0) return false;\n        return true;\n    }\n    if (color_prob_choice(get_transparency(material_id, pos), weight, choice_sample)) {\n        // refraction\n        float eta = 1.0 / get_ior(material_id, pos);\n\n        if (going_out) {\n          // simplification: \"out\" of any object is always vacuum\n          // and no nested transparent objects are supported\n          eta = 1.0 / eta;\n        }\n\n        // see https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/refract.xhtml\n        // Snell's law for refraction\n        float d = dot(n, ray);\n        float k = 1.0 - eta*eta * (1.0 - d*d);\n        if (k < 0.0) {\n            // total reflection\n            ray = ray - 2.0*d*n;\n        } else {\n            ray = eta * ray - (eta * d + sqrt(k)) * n;\n        }\n        return true;\n    }\n    return false;\n}\n\nbool sample_diffuse(int material_id, bool going_out, vec3 pos, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {\n    weight = get_diffuse(material_id, pos);\n    ray = get_random_cosine_weighted(normal, rng);\n    return true;\n}\n\nfloat sampling_pdf(int material_id, bool going_out, vec3 pos, vec3 normal, vec3 ray_in, vec3 ray_out) {\n    return dot(normal, ray_out) / M_PI;\n}\n\nfloat sample_diffuse_and_prob(int material_id, bool going_out, vec3 pos, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {\n    vec3 ray_in = ray;\n    sample_diffuse(material_id, going_out, pos, normal, ray, weight, rng);\n    return sampling_pdf(material_id, going_out, pos, normal, ray_in, ray);\n}\n\ncolor_type brdf_cos_weighted(int material_id, bool going_out, vec3 pos, vec3 normal, vec3 ray_in, vec3 ray_out) {\n    return get_diffuse(material_id, pos) * sampling_pdf(material_id, going_out, pos, normal, ray_in, ray_out);\n}\n\nfloat sample_ray_and_prob(int material_id, bool going_out, vec3 pos, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {\n    if (sample_specular(material_id, going_out, pos, normal, ray, weight, rng)) {\n        return -1.0;\n    } else {\n        return sample_diffuse_and_prob(material_id, going_out, pos, normal, ray, weight, rng);\n    }\n}\n\nbool sample_ray(int material_id, bool going_out, vec3 pos, vec3 normal, inout vec3 ray, out color_type weight, inout rand_state rng) {\n    return sample_ray_and_prob(material_id, going_out, pos, normal, ray, weight, rng) != 0.0;\n}\n","scattering.glsl":"#include \"rand\"\n#include \"scene\"\n#include \"util/math.glsl\"\n#include \"util/random_helpers.glsl\"\n\nvec3 sample_scattered_ray(int material_id, vec3 ray_in, inout rand_state rng) {\n    // Henyey-Greenstein phase function,\n    // see https://www.astro.umd.edu/~jph/HG_note.pdf\n    float g = get_scattering_anisotropy(material_id, vec3(0,0,0));\n    if (g == 0.0) {\n        // the sampling formula below breaks at g == 0.0, which corresponds to\n        // fully isotropic scattering, which is easier to model like this\n        return normalize(rand_next_gauss3(rng));\n    }\n\n    float a = (1.0 - g*g) / (1.0 - g + 2.0*g*rand_next_uniform(rng));\n    float mu = 0.5 / g * (1.0 + g*g - a*a);\n\n    vec3 perp = rand_next_gauss3(rng);\n    perp = normalize(perp - ray_in*dot(ray_in, perp));\n    return mu * ray_in +  sqrt(1.0 - mu*mu) * perp;\n}\n\nfloat sample_scattering_distance(int material_id, out color_type col, inout rand_state rng) {\n    color_type distances = get_mean_scattering_distance(material_id, vec3(0,0,0));\n    float dist = color2prob(distances);\n    if (dist > 0.0) {\n        col = distances / dist;\n        return -log(rand_next_uniform(rng)) * dist;\n    } else {\n        return 1e10;\n    }\n}\n\nfloat get_scattering_prob(int material_id, float distance) {\n    color_type distances = get_mean_scattering_distance(material_id, vec3(0,0,0));\n    float dist = color2prob(distances);\n    if (dist > 0.0) {\n      return 1.0 - exp(-distance / dist);\n    }\n    return 0.0;\n}\n"},"util":{"math.glsl":"#define M_PI 3.14159265358979323846\n","random_helpers.glsl":"#include \"rand\"\n\nvec3 get_random_cosine_weighted(vec3 normal, inout rand_state rng) {\n    // cosine weighted\n    vec3 dir = rand_next_gauss3(rng);\n    // project to surface\n    dir = normalize(dir - dot(dir, normal)*normal);\n    float r = rand_next_uniform(rng);\n    return normal * sqrt(1.0 - r) + dir * sqrt(r);\n}\n\n// assuming x is random uniform in [0,1], return x < prob and make\n// x a new random uniform in [0, 1] independent of this choice\nbool random_choice(float prob, inout float x) {\n    if (x < prob) {\n      x /= prob;\n      return true;\n    } else {\n      x = (x - prob) / (1.0 - prob);\n      return false;\n    }\n}\n\n// bias-inducing workaround for ill-behaved sampling\n// drop all sufficiently nasty samples\n#ifndef MAX_SAMPLE_WEIGHT\n#define MAX_SAMPLE_WEIGHT 100.0\n#endif\n","camera_helpers.glsl":"#include \"rand\"\n#include \"util/math.glsl\"\n#include \"rec_filter\"\n\nvec2 get_ccd_pos(vec2 screen_pos, vec2 resolution, inout rand_state rng) {\n    float aspect = resolution.y / resolution.x;\n    vec2 jittered_pos = screen_pos + get_rec_filter_sample(rng);\n    return ((jittered_pos / resolution.xy) * 2.0 - 1.0) * vec2(1.0, aspect);\n}\n"},"renderer":{"flat_color_shader.glsl":"#include \"scene\"\n#include \"rand\"\n#include \"camera\"\n\n#ifndef BRIGHTNESS\n#define BRIGHTNESS 1.5\n#endif\n\nvec3 render(vec2 xy, vec2 resolution) {\n    rand_state rng;\n    rand_init(rng);\n\n    vec3 ray_pos;\n    vec3 ray;\n    vec3 white = vec3(1,1,1);\n    get_camera_ray(xy, resolution, ray_pos, ray, rng);\n\n    // find intersection\n    vec4 intersection; // vec4(normal.xyz, distance)\n    int which_object = find_intersection(ray_pos, ray, 0, 0, intersection);\n\n    if (which_object == 0) {\n        return vec3(0.0, 0.0, 0.0);\n    } else {\n        int material_id = get_material_id(which_object);\n        ray_pos += intersection.w * ray;\n        vec3 emission;\n        if (get_emission(material_id, ray_pos, emission)) {\n            return emission * white;\n        }\n        return get_diffuse(material_id, ray_pos) * white;\n    }\n}\n","pathtracer.glsl":"#include \"parameters\"\n#include \"scene\"\n#include \"rand\"\n#include \"camera\"\n#include \"shading\"\n#include \"space_distortion\"\n#include \"util/random_helpers.glsl\"\n\n#ifndef N_BOUNCES\n#define N_BOUNCES 4\n#endif\n\nvec3 render(vec2 xy, vec2 resolution) {\n\n    rand_state rng;\n    rand_init(rng);\n\n    vec3 ray_pos;\n    vec3 ray;\n    get_camera_ray(xy, resolution, ray_pos, ray, rng);\n    vec3 ray_color = vec3(1.0, 1.0, 1.0);\n\n    const vec3 zero_vec3 = vec3(0.0, 0.0, 0.0);\n    int prev_object = 0; // assumed to be OBJ_NONE\n    int inside_object = 0;\n    vec3 result_color = zero_vec3;\n    color_type color;\n\n    float choice_sample = rand_next_uniform(rng);\n    int inside_object_material_id = get_material_id(inside_object);\n\n    for (int bounce = 0; bounce <= N_BOUNCES; ++bounce) {\n        // find intersection\n        vec3 normal;\n        float scattering_distance = sample_scattering_distance(inside_object_material_id, color, rng);\n        int which_object = find_intersection_and_normal(ray_pos, ray, prev_object, inside_object, scattering_distance, ray_pos, normal);\n\n        if (which_object == 0) {\n            // didn't hit anything\n            if (scattering_distance < 1e10) {\n                // ... due to scattering before that\n                ray_color *= color;\n                ray = sample_scattered_ray(inside_object_material_id, ray, rng);\n                prev_object = 0;\n            } else {\n                break;\n            }\n        } else {\n            int material_id = get_material_id(which_object);\n\n            if (get_emission(material_id, ray_pos, color)) {\n                result_color += ray_color * color;\n            }\n\n            bool going_out = which_object == inside_object;\n            if (going_out) {\n                normal = -normal;\n            }\n\n            if (sample_ray(material_id, going_out, ray_pos, normal, ray, color, rng)) {\n                ray_color *= color;\n            } else {\n                break;\n            }\n\n            // workaround for nasty samples\n            if ((ray_color.x + ray_color.y + ray_color.z) / 3.0 > MAX_SAMPLE_WEIGHT) break;\n\n            if (dot(ray, normal) < 0.0) {\n                if (going_out) {\n                    // normal = -normal (not used)\n                    inside_object = 0;\n                }\n                else inside_object = which_object;\n\n                inside_object_material_id = get_material_id(inside_object);\n            }\n            prev_object = which_object;\n        }\n    }\n    return result_color;\n}\n","random_flat_color_shader.glsl":"#include \"scene\"\n#include \"rand\"\n#include \"camera\"\n\nvec3 get_random_color(int which_object, vec3 normal) {\n  float objCol = float(which_object - which_object / 5) / 5.0;\n  if (normal.x == 0.0) {\n    return vec3(objCol, (1.0 + sign(normal.y))*0.5, (1.0 + sign(normal.z))*0.5);\n  } else if (normal.y == 0.0) {\n    return vec3((1.0 + sign(normal.x))*0.5, objCol, (1.0 - sign(normal.z))*0.5);\n  } else if (normal.z == 0.0) {\n    return vec3((1.0 - sign(normal.x))*0.5, (1.0 - sign(normal.y))*0.5, objCol);\n  }\n  else {\n    return vec3(objCol, 1.0 - objCol, objCol*objCol);\n  }\n}\n\nvec3 render(vec2 xy, vec2 resolution) {\n    rand_state rng;\n    rand_init(rng);\n\n    vec3 ray_pos;\n    vec3 ray;\n    get_camera_ray(xy, resolution, ray_pos, ray, rng);\n\n    // find intersection\n    vec4 intersection; // vec4(normal.xyz, distance)\n    int which_object = find_intersection(ray_pos, ray, 0, 0, intersection);\n\n    if (which_object == 0) {\n        return vec3(0.0, 0.0, 0.0);\n    } else {\n        return get_random_color(which_object, intersection.xyz);\n    }\n}\n","bidirectional_tracer_1_light_vertex.glsl":"#include \"parameters\"\n#include \"scene\"\n#include \"rand\"\n#include \"camera\"\n#include \"shading\"\n#include \"util/random_helpers.glsl\"\n\n// tracer parameters\n#ifndef N_BOUNCES\n#define N_BOUNCES 4\n#endif\n\n#define HEURISTIC_BALANCE 1\n#define HEURISTIC_POWER 2\n#define HEURISTIC_MAX 3\n#define HEURISTIC_EQUAL 4\n#define HEURISTIC_PATH_TRACER 5\n#define HEURISTIC_DIRECT_ONLY 6\n\n#ifndef WEIGHTING_HEURISTIC\n#define WEIGHTING_HEURISTIC HEURISTIC_POWER\n#endif\n\n#if WEIGHTING_HEURISTIC == HEURISTIC_PATH_TRACER\n#define weight1(a,b) 1.0\n#define weight2(a,b) 0.0\n#elif WEIGHTING_HEURISTIC == HEURISTIC_DIRECT_ONLY\n#define weight1(a,b) 0.0\n#define weight2(a,b) 1.0\n#else\nfloat weight1(float p1, float p2) {\n#if WEIGHTING_HEURISTIC == HEURISTIC_EQUAL\n    return 0.5;\n#elif WEIGHTING_HEURISTIC == HEURISTIC_BALANCE\n    return p1 / (p1 + p2); // balance heuristic\n#elif WEIGHTING_HEURISTIC == HEURISTIC_POWER\n    return p1*p1 / (p1*p1 + p2*p2); // power heuristic (2)\n#elif WEIGHTING_HEURISTIC == HEURISTIC_MAX\n    return p1 > p2 ? 1.0 : 0.0; // maximum heuristic\n#endif\n}\n#define weight2 weight1\n#endif\n\nbool check_visibility(vec3 pos, vec3 shadow_ray, vec3 normal, vec3 light_normal, int which_object, int light_object) {\n    vec4 shadow_isec;\n    if (dot(shadow_ray, normal) > 0.0 &&\n        dot(shadow_ray, light_normal) < 0.0 &&\n        which_object != light_object)\n    {\n        vec4 shadow_isec;\n        int shadow_object = find_intersection(pos, shadow_ray, which_object, 0, shadow_isec);\n        return shadow_object == 0 || shadow_object == light_object;\n    }\n    return false;\n}\n\nvec3 render(vec2 xy, vec2 resolution) {\n    rand_state rng;\n    rand_init(rng);\n\n    vec3 ray_pos;\n    vec3 ray;\n    get_camera_ray(xy, resolution, ray_pos, ray, rng);\n    vec3 ray_color = vec3(1.0, 1.0, 1.0);\n\n    const vec3 zero_vec3 = vec3(0.0, 0.0, 0.0);\n    int prev_object = 0; // assumed to be OBJ_NONE\n    int inside_object = 0;\n    vec3 result_color = zero_vec3;\n    int inside_object_material_id = get_material_id(inside_object);\n\n    float last_surface_p = 0.0;\n\n    vec3 light_point, light_normal;\n    float light_sample_area_probability;\n    int light_object = select_light(light_point, light_normal, light_sample_area_probability, rng);\n    color_type light_emission;\n\n    get_emission(get_material_id(light_object), light_point, light_emission);\n    color_type color;\n\n    float choice_sample = rand_next_uniform(rng);\n\n    for (int bounce = 0; bounce <= N_BOUNCES; ++bounce)  {\n        vec4 intersection; // vec4(normal.xyz, distance)\n        float scattering_distance = sample_scattering_distance(inside_object_material_id, color, rng);\n        int which_object = find_intersection(ray_pos, ray, prev_object, inside_object, intersection);\n\n        if (which_object == 0 || intersection.w > scattering_distance) {\n            // did not hit anything\n            if (scattering_distance < 1e10) {\n                // due to scattering\n                ray_color *= color;\n                ray_pos += scattering_distance * ray;\n                ray = sample_scattered_ray(inside_object_material_id, ray, rng);\n                last_surface_p = 0.0;\n                prev_object = 0;\n            } else {\n                break;\n            }\n        } else {\n            vec3 normal = intersection.xyz;\n            ray_pos += intersection.w * ray;\n            int material_id = get_material_id(which_object);\n\n            if (get_emission(material_id, ray_pos, color)) {\n                float probThis, probOther;\n\n                bool has_samp = has_sampler(which_object);\n                if (last_surface_p > 0.0 && has_sampler(which_object)) {\n                    float no_scatter_prob = 1.0 - get_scattering_prob(inside_object_material_id, intersection.w);\n                    float change_of_variables = -dot(normal, ray) / (intersection.w*intersection.w);\n                    // surface scattering\n                    probThis = change_of_variables * last_surface_p * no_scatter_prob;\n                    probOther = light_sample_area_probability;\n                } else {\n                    probOther = 0.0;\n                    probThis = 1.0;\n                }\n                result_color += ray_color * color * weight1(probThis, probOther);\n            }\n\n            bool going_out = which_object == inside_object;\n            if (going_out) {\n                normal = -normal;\n            }\n\n            vec3 ray_in = ray;\n            last_surface_p = sample_ray_and_prob(material_id, going_out, ray_pos, normal, ray, color, rng);\n            float cur_sample_weight = color2prob(color)*(ray_color.x + ray_color.y + ray_color.z) / 3.0;\n            if (last_surface_p == 0.0 || cur_sample_weight > MAX_SAMPLE_WEIGHT) break;\n\n            if (last_surface_p > 0.0 && bounce < N_BOUNCES && inside_object == 0) {\n                // no lights inside transparent objects supported\n                vec3 shadow_ray = light_point - ray_pos;\n                float shadow_dist = length(shadow_ray);\n                shadow_ray *= 1.0 / shadow_dist;\n\n                if (check_visibility(ray_pos, shadow_ray, normal, light_normal, which_object, light_object)) {\n                    float change_of_variables = -dot(light_normal, shadow_ray) / (shadow_dist*shadow_dist);\n\n                    // = dot(normal, shadow_ray) / M_PI\n                    float prob_sampling = sampling_pdf(material_id, going_out, ray_pos, normal, ray_in, shadow_ray);\n\n                    // multiple importance sampling probabilities of different strategies\n                    float probThis = light_sample_area_probability;\n                    float probOther = change_of_variables * prob_sampling;\n\n                    float no_scatter_prob = 1.0 - get_scattering_prob(inside_object_material_id, shadow_dist);\n                    probOther *= no_scatter_prob;\n\n                    color_type contribution = no_scatter_prob * brdf_cos_weighted(material_id, going_out, ray_pos, normal, ray_in, shadow_ray);\n                    color_type f_over_p = contribution * change_of_variables / probThis;\n                    color_type total_weight = f_over_p * weight2(probThis, probOther);\n                    if (color2prob(total_weight) > 0.0) { // handle some numerical issues\n                        result_color += ray_color * light_emission * total_weight;\n                    }\n                }\n            } else {\n                last_surface_p = 0.0;\n            }\n            ray_color *= color;\n\n            if (dot(ray, normal) < 0.0) {\n                if (going_out) {\n                    // normal = -normal (not used)\n                    inside_object = 0;\n                }\n                else inside_object = which_object;\n                inside_object_material_id = get_material_id(inside_object);\n            }\n\n            prev_object = which_object;\n        }\n    }\n    return result_color;\n}\n","direct_light_diffuse_shader.glsl":"#include \"scene\"\n#include \"rand\"\n#include \"camera\"\n\n#ifndef BRIGHTNESS\n#define BRIGHTNESS 1.5\n#endif\n\nvec3 render(vec2 xy, vec2 resolution) {\n    rand_state rng;\n    rand_init(rng);\n\n    const vec3 light_dir = normalize(vec3(1.0, 2.0, 3.0));\n\n    vec3 ray_pos;\n    vec3 ray;\n    get_camera_ray(xy, resolution, ray_pos, ray, rng);\n\n    // find intersection\n    vec4 intersection; // vec4(normal.xyz, distance)\n    int which_object = find_intersection(ray_pos, ray, 0, 0, intersection);\n    vec3 ray_color = vec3(1,1,1) * BRIGHTNESS;\n\n    if (which_object == 0) {\n        return vec3(0.0, 0.0, 0.0);\n    } else {\n        ray_pos += intersection.w * ray;\n        return ray_color * get_diffuse(get_material_id(which_object), ray_pos) * max(0.0, dot(intersection.xyz, light_dir));\n    }\n}\n"},"mains":{"monte_carlo.glsl":"#include \"parameters\"\n#include \"renderer\"\n\nuniform vec2 resolution;\nuniform float frame_number;\nuniform sampler2D base_image;\n\nvoid main() {\n    vec3 cur_color = render(gl_FragCoord.xy, resolution);\n    vec3 base_color = texture2D(base_image, gl_FragCoord.xy / resolution.xy).xyz;\n    gl_FragColor = vec4(base_color + (cur_color - base_color)/(frame_number+1.0), 1.0);\n}\n","single_pass.glsl":"#include \"parameters\"\n#include \"renderer\"\n\nuniform vec2 resolution;\n\nvoid main() {\n    gl_FragColor = vec4(render(gl_FragCoord.xy, resolution), 1.0);\n}\n"},"templates":{"fixed_camera.glsl.mustache":"#ifndef PINHOLE_CAMERA_INCLUDED\n#define PINHOLE_CAMERA_INCLUDED\n\nvoid get_pinhole_camera(out vec3 cam_pos, out vec3 cam_x, out vec3 cam_y, out vec3 cam_z, out float fov_angle) {\n  // define camera\n  fov_angle = {{fovAngleRad}};\n  const float cam_theta = {{thetaRad}};\n  const float cam_phi = {{phiRad}};\n  const float cam_dist = {{distance}};\n  vec3 camera_target = vec3({{targetList}});\n\n  cam_z = vec3(cos(cam_theta), sin(cam_theta), 0.0);\n  cam_x = vec3(cam_z.y, -cam_z.x, 0.0);\n  cam_z = cos(cam_phi)*cam_z + vec3(0,0,-sin(cam_phi));\n  cam_y = cross(cam_x, cam_z);\n  cam_pos = -cam_z * cam_dist + camera_target;\n}\n\nfloat get_aperture_size() { return {{apertureSize}}; }\nfloat get_focus_distance() { return {{focusDistance}}; }\n\n#endif\n","texture_geometry.glsl.mustache":"#include \"util/math.glsl\"\n\n{{#tracers}}\n{{{code}}}\n{{/tracers}}\n\nuniform sampler2D position_texture;\nuniform sampler2D rotation_texture;\nuniform sampler2D parameter_texture;\n\nint find_intersection(vec3 ray_pos, vec3 ray, int prev_object, int inside_object, out vec4 intersection) {\n    int which_object = 0;\n    {{#tracers}}\n    for (int cur_id={{minObjectId}}; cur_id <= {{maxObjectId}}; ++cur_id) {\n        bool inside = inside_object == cur_id;\n        bool prev_self = prev_object == cur_id;\n        if (inside || !prev_self {{^convex}}|| true{{/convex}}) {\n            float tex_coord = float(cur_id-1) / float({{nObjects}}-1);\n            vec3 object_pos = texture2D(position_texture, vec2(tex_coord, 0.0)).xyz;\n            vec3 rel_pos = ray_pos - object_pos;\n            vec3 rotated_ray = ray;\n\n            {{#anyRotated}}\n            mat3 rotation = mat3(\n              texture2D(rotation_texture, vec2(tex_coord, 0.0)).xyz,\n              texture2D(rotation_texture, vec2(tex_coord, 0.5)).xyz,\n              texture2D(rotation_texture, vec2(tex_coord, 1.0)).xyz);\n\n            rel_pos = rel_pos * rotation;\n            rotated_ray = ray * rotation;\n            {{/anyRotated}}\n\n            vec4 parameters = texture2D(parameter_texture, vec2(tex_coord, 0.0));\n            vec4 cur_isec = {{name}}(rel_pos, rotated_ray{{^noInside}}, inside{{/noInside}}{{^convex}}, prev_self{{/convex}} {{parameterListLeadingComma}});\n            if (cur_isec.w > 0.0 && (cur_isec.w < intersection.w || which_object == 0)) {\n                intersection = cur_isec;\n                {{#anyRotated}}\n                intersection.xyz = rotation * intersection.xyz;\n                {{/anyRotated}}\n                which_object = cur_id;\n            }\n        }\n    }\n    {{/tracers}}\n    return which_object;\n}\n","select_light.glsl.mustache":"#include \"rand\"\n#ifndef DISABLE_LIGHT_SAMPLING\n\n{{#uniqueSamplers}}\n{{{.}}}\n{{/uniqueSamplers}}\n\n// for bidirectional tracing\nint select_light(out vec3 light_point, out vec3 light_normal, out float sample_prob_density_per_area, inout rand_state rng) {\n      {{#lights.0}}\n      // This should work assuming the different lights have similar intensity\n      float totalArea = 0.0\n      {{#lights}}\n        + {{getAreaName}}({{parameterList}})\n      {{/lights}}\n      ;\n      if (totalArea <= 0.0) return 0;\n      sample_prob_density_per_area = 1.0 / totalArea;\n\n      float choice = rand_next_uniform(rng) * totalArea;\n      float area;\n\n      {{#lights}}\n      area = {{getAreaName}}({{parameterList}});\n      if (choice < area) {\n        {{samplerName}}(rng, light_point, light_normal {{parameterListLeadingComma}});\n        {{#hasRotation}}\n        const mat3 rotation = mat3({{rotationList}});\n        light_point = rotation * light_point;\n        light_normal = rotation * light_normal;\n        {{/hasRotation}}\n        light_point += vec3({{posList}});\n        return {{id}};\n      }\n      choice -= area;\n      {{/lights}}\n      {{/lights.0}}\n      return 0;\n}\n\nbool has_sampler(int which_object) {\n    {{#lights}}\n    if (which_object == {{id}}) return true;\n    {{/lights}}\n    return false;\n}\n\n#endif\n","geometry.glsl.mustache":"#include \"util/math.glsl\"\n\n{{#tracers}}\n{{{code}}}\n{{/tracers}}\n\nint find_intersection(vec3 ray_pos, vec3 ray, int prev_object, int inside_object, out vec4 intersection) {\n    int which_object = 0, cur_id;\n    vec4 cur_isec;\n    vec3 rel_pos;\n    bool inside;\n    bool prev_self;\n    vec3 rotated_ray;\n\n    {{#objects}}\n    cur_id = {{id}};\n    inside = inside_object == cur_id;\n    prev_self = prev_object == cur_id;\n    if (inside || !prev_self {{^convex}}|| true{{/convex}}) {\n      rel_pos = ray_pos - vec3({{posList}});\n      rotated_ray = ray;\n      {{#hasRotation}}\n      const mat3 rotation = mat3({{rotationList}});\n      rel_pos = rel_pos * rotation;\n      rotated_ray = ray * rotation;\n      {{/hasRotation}}\n      cur_isec = {{tracerName}}(rel_pos, rotated_ray{{^noInside}}, inside{{/noInside}}{{^convex}}, prev_self{{/convex}} {{parameterListLeadingComma}});\n      if (cur_isec.w > 0.0 && (cur_isec.w < intersection.w || which_object == 0)) {\n          intersection = cur_isec;\n          {{#hasRotation}}\n          intersection.xyz = rotation * intersection.xyz;\n          {{/hasRotation}}\n          which_object = cur_id;\n      }\n    }\n    {{/objects}}\n    return which_object;\n}\n","texture_materials.glsl.mustache":"#define color_type {{colorType}}\nfloat color2prob(color_type c) { return {{{colorToProb}}}; }\n\nuniform sampler2D material_id_texture;\nuniform sampler2D emission_texture;\n\nint get_material_id(int which_object) {\n    return int(texture2D(material_id_texture, vec2(float(which_object)/float({{maxObjectId}}), 0.5)).x + 0.5);\n}\n\nbool get_emission(int material_id, vec3 pos, out color_type emission) {\n  {{#emissionTextures}}\n  if (material_id == {{id}}) {\n    emission = map_texture_{{textureId}}(pos).{{vectorMember}};\n    return (emission.x + emission.y + emission.z) > 0.0; // works with both RGB and grayscale\n  }\n  {{/emissionTextures}}\n  vec4 val = texture2D(emission_texture, vec2(float(material_id)/float({{nMaterials}}-1), 0.5));\n  emission = val.{{vectorMember}};\n  return (val.x + val.y + val.z) > 0.0; // works with both RGB and grayscale\n}\n\n{{#properties}}\nuniform sampler2D {{name}}_texture;\n{{type}} get_{{name}}(int material_id, vec3 pos) {\n  {{#textures}}\n  if (material_id == {{id}}) {\n    return map_texture_{{textureId}}(pos).{{vectorMember}};\n  }\n  {{/textures}}\n  return texture2D({{name}}_texture, vec2(float(material_id)/float({{nMaterials}}-1), 0.5)).{{vectorMember}};\n}\n{{/properties}}\n","image_and_procedural_textures.glsl.mustache":"{{#textures}}\n{{^procedural}}\nuniform sampler2D texture_{{id}};\n{{/procedural}}\nvec4 map_texture_{{id}}(vec3 pos) {\n  {{{procedural}}}\n  {{^procedural}}\n  vec4 rgba = texture2D(texture_{{id}}, {{{mapping}}});\n  return rgba;\n  {{/procedural}}\n}\n{{/textures}}\n","if_else_materials.glsl.mustache":"#define color_type {{colorType}}\nfloat color2prob(color_type c) { return {{{colorToProb}}}; }\n\nbool get_emission(int which_obj, vec3 pos, out color_type emission) {\n  {{#materialEmissions}}\n  if (false\n    {{#objects}}\n    || which_obj == {{id}}\n    {{/objects}}) {\n    {{#textureId}}\n    emission = map_texture_{{textureId}}(pos).{{vectorMember}};\n    {{/textureId}}\n    {{^textureId}}\n    emission = {{value}};\n    {{/textureId}}\n    return true;\n  }\n  {{/materialEmissions}}\n  return false;\n}\n\n{{#properties}}\n{{type}} get_{{name}}(int which_obj, vec3 pos) {\n  {{#materials}}\n  if (false\n    {{#objects}}\n    || which_obj == {{id}}\n    {{/objects}}) {\n    {{#textureId}}\n    return map_texture_{{textureId}}(pos).{{vectorMember}};\n    {{/textureId}}\n    {{^textureId}}\n    return {{value}};\n    {{/textureId}}\n  }\n  {{/materials}}\n  return {{default}};\n}\n{{/properties}}\n\n#define get_material_id(x) x\n"},"scene":{"test.glsl":"#include \"surfaces/sphere.glsl\"\n#include \"surfaces/box_interior.glsl\"\n#include \"util/math.glsl\"\n#include \"rand\"\n\n// secene geometry\n#define OBJ_NONE 0\n#define OBJ_SPHERE_1 1\n#define OBJ_SPHERE_2 2\n#define OBJ_BOX 3\n#define OBJ_LIGHT_1 4\n#define OBJ_LIGHT_2 5\n#define N_OBJECTS 6\n\n#define N_LIGHTS 2\n\n#define ROOM_H 2.0\n#define ROOM_W 5.0\n\n#define sphere_1_pos vec3(0.0, 0.0, 0.5)\n#define sphere_1_r 0.5\n#define sphere_2_pos vec3(-1.1, 0.3, 0.25)\n#define sphere_2_r 0.25\n\n#define BOX_SIZE (vec3(ROOM_W, ROOM_W, ROOM_H)*0.5)\n#define BOX_CENTER vec3(0.0, 0.0, ROOM_H*0.5)\n\n#define light_r 0.4\n\n#define light_1_pos vec3(-ROOM_W*0.5, 0.0, ROOM_H)\n#define light_2_pos vec3(0.0, ROOM_W*0.5, ROOM_H)\n\n// materials\n#define light_1_emission vec3(0.8, 0.8, 1.0)*100.0;\n#define light_2_emission vec3(1.0, 0.8, 0.6)*100.0;\n\n#define sphere_1_diffuse vec3(.5, .8, .9) * 0.5\n#define box_diffuse vec3(1., 1., 1.)*.7 * 0.5\n\n// helpers\n#define UNIT_SPHERE_AREA (4.0*M_PI)\n#define ZERO_VEC3 vec3(0.0, 0.0, 0.0)\n\nint find_intersection(vec3 ray_pos, vec3 ray, int prev_object, int inside_object, out vec4 intersection) {\n    int which_object = OBJ_NONE;\n    vec4 cur_isec;\n    vec3 rel_pos;\n    bool inside;\n\n    inside = inside_object == OBJ_SPHERE_1;\n    if (inside || prev_object != OBJ_SPHERE_1) {\n        rel_pos = ray_pos - sphere_1_pos;\n        cur_isec = sphere_intersection(rel_pos, ray, inside, sphere_1_r);\n        if (cur_isec.w > 0.0) {\n            intersection = cur_isec;\n            which_object = OBJ_SPHERE_1;\n        }\n    }\n\n    inside = inside_object == OBJ_SPHERE_2;\n    if (inside || prev_object != OBJ_SPHERE_2) {\n        rel_pos = ray_pos - sphere_2_pos;\n        cur_isec = sphere_intersection(rel_pos, ray, inside, sphere_2_r);\n        if (cur_isec.w > 0.0 && (cur_isec.w < intersection.w || which_object == OBJ_NONE)) {\n            intersection = cur_isec;\n            which_object = OBJ_SPHERE_2;\n        }\n    }\n\n    // The box interior is non-convex and can handle that.\n    // \"Inside\" not supported here\n    rel_pos = ray_pos - BOX_CENTER;\n    cur_isec = box_interior_intersection(rel_pos, ray, false, BOX_SIZE);\n    if (cur_isec.w > 0.0 && (cur_isec.w < intersection.w || which_object == OBJ_NONE)) {\n        intersection = cur_isec;\n        which_object = OBJ_BOX;\n    }\n\n    inside = inside_object == OBJ_LIGHT_1;\n    if (inside || prev_object != OBJ_LIGHT_1) {\n        rel_pos = ray_pos - light_1_pos;\n        cur_isec = sphere_intersection(rel_pos, ray, inside, light_r);\n        if (cur_isec.w > 0.0 && (cur_isec.w < intersection.w || which_object == OBJ_NONE)) {\n            intersection = cur_isec;\n            which_object = OBJ_LIGHT_1;\n        }\n    }\n\n    inside = inside_object == OBJ_LIGHT_2;\n    if (inside || prev_object != OBJ_LIGHT_2) {\n        rel_pos = ray_pos - light_2_pos;\n        cur_isec = sphere_intersection(rel_pos, ray, inside, light_r);\n        if (cur_isec.w > 0.0 && (cur_isec.w < intersection.w || which_object == OBJ_NONE)) {\n            intersection = cur_isec;\n            which_object = OBJ_LIGHT_2;\n        }\n    }\n\n    return which_object;\n}\n\nbool get_emission(int which_obj, out vec3 emission) {\n  if (which_obj == OBJ_LIGHT_1) {\n    emission = light_1_emission;\n  } else if (which_obj == OBJ_LIGHT_2) {\n    emission = light_2_emission;\n  } else {\n    emission = ZERO_VEC3;\n    return false;\n  }\n  emission *= 1.0 / (UNIT_SPHERE_AREA * light_r * light_r);\n  return true;\n}\n\nvec3 get_diffuse(int which_object) {\n  if (which_object == OBJ_SPHERE_1 || which_object == OBJ_SPHERE_2) {\n    return sphere_1_diffuse;\n  } else if (which_object == OBJ_BOX) {\n    return box_diffuse;\n  } else {\n    return ZERO_VEC3;\n  }\n}\n\nfloat get_reflectivity(int which_object) {\n  if (which_object == OBJ_SPHERE_2) {\n    return 0.1;\n  } else {\n    return 0.0;\n  }\n}\n\nfloat get_transparency(int which_object) {\n  if (which_object == OBJ_SPHERE_2) {\n    return 1.0; // sampled after reflectivity\n  }\n  return 0.0;\n}\n\n// index of refraction\nfloat get_ior(int which_object) {\n  if (which_object == OBJ_SPHERE_2) {\n    return 1.5;\n  }\n  return 1.0;\n}\n\n#ifndef PINHOLE_CAMERA_INCLUDED\n#define PINHOLE_CAMERA_INCLUDED\n\nvoid get_pinhole_camera(out vec3 cam_pos, out vec3 cam_x, out vec3 cam_y, out vec3 cam_z, out float fov_angle) {\n  // define camera\n  fov_angle = DEG2RAD(50.0);\n  const float cam_theta = DEG2RAD(300.0);\n  const float cam_phi = DEG2RAD(5.0);\n  const float cam_dist = 2.6;\n  vec3 camera_target = vec3(-0.5, 0.0, 0.35);\n\n  cam_z = vec3(cos(cam_theta), sin(cam_theta), 0.0);\n  cam_x = vec3(cam_z.y, -cam_z.x, 0.0);\n  cam_z = cos(cam_phi)*cam_z + vec3(0,0,-sin(cam_phi));\n  cam_y = cross(cam_x, cam_z);\n  cam_pos = -cam_z * cam_dist + camera_target;\n}\n\n#endif\n\n// for bidirectional tracing\nint select_light(out vec3 light_point, out vec3 light_normal, out float sample_prob_density_per_area, inout rand_state rng) {\n      light_normal = normalize(rand_next_gauss3(rng));\n      light_point = light_normal * light_r;\n      sample_prob_density_per_area = 1.0 / (UNIT_SPHERE_AREA*light_r*light_r * float(N_LIGHTS));\n\n      int light_object = OBJ_NONE;\n      if (rand_next_uniform(rng) > 0.5) {\n        light_point += light_1_pos;\n        light_object = OBJ_LIGHT_1;\n      } else {\n        light_point += light_2_pos;\n        light_object = OBJ_LIGHT_2;\n      }\n\n      return light_object;\n}\n","moving_camera.glsl":"uniform vec2 mouse;\n\n#include \"util/math.glsl\"\n#define PINHOLE_CAMERA_INCLUDED\n\nvoid get_pinhole_camera(out vec3 cam_pos, out vec3 cam_x, out vec3 cam_y, out vec3 cam_z, out float fov_angle) {\n  // define camera\n  fov_angle = DEG2RAD(50.0);\n  float cam_theta = DEG2RAD(300.0 + (mouse.x-0.5)*360.0);\n  float cam_phi = DEG2RAD(20.0 + (mouse.y-0.5)*50.0);\n  const float cam_dist = 2.6;\n  vec3 camera_target = vec3(-0.5, 0.0, 0.35);\n\n  cam_z = vec3(cos(cam_theta), sin(cam_theta), 0.0);\n  cam_x = vec3(cam_z.y, -cam_z.x, 0.0);\n  cam_z = cos(cam_phi)*cam_z + vec3(0,0,-sin(cam_phi));\n  cam_y = cross(cam_x, cam_z);\n  cam_pos = -cam_z * cam_dist + camera_target;\n}\n\n#include \"scene/test.glsl\"\n"},"rand":{"none.glsl":"// dummy / none rand\n#define rand_state int\n\nvoid rand_init(out rand_state state) {}\n\nvec4 rand_next_gauss4(inout rand_state state) {\n    return vec4(0.0, 0.0, 0.0, 1.0);\n}\n\nvec3 rand_next_gauss3(inout rand_state state) {\n    return rand_next_gauss4(state).xyz;\n}\n\nfloat rand_next_uniform(inout rand_state state) {\n    return 0.0;\n}\n","fixed_vecs.glsl":"// silly PRNG\nuniform vec4 random_gauss_1, random_gauss_2, random_gauss_3,\n             random_gauss_4, random_gauss_5, random_gauss_6,\n             random_gauss_7, random_gauss_8;\nuniform vec4 random_uniforms_1, random_uniforms_2, random_uniforms_3,\n             random_uniforms_4, random_uniforms_5, random_uniforms_6,\n             random_uniforms_7, random_uniforms_8;\n\nstruct rand_state {\n    int index_uniform;\n    int index_gauss4;\n};\n\nvoid rand_init(out rand_state state) {\n    state.index_uniform = 0;\n    state.index_gauss4 = 0;\n}\n\nvec4 rand_next_gauss4(inout rand_state state) {\n    state.index_gauss4++;\n    int c = state.index_gauss4;\n    if (c == 1) return random_gauss_1;\n    if (c == 2) return random_gauss_2;\n    if (c == 3) return random_gauss_3;\n    if (c == 4) return random_gauss_4;\n    if (c == 5) return random_gauss_5;\n    if (c == 6) return random_gauss_6;\n    if (c == 7) return random_gauss_7;\n    if (c == 8) return random_gauss_8;\n    //abort(); // ???\n    return vec4(0.0, 0.0, 0.0, 0.0);\n}\n\nvec3 rand_next_gauss3(inout rand_state state) {\n    return rand_next_gauss4(state).xyz;\n}\n\nfloat rand_next_uniform(inout rand_state state) {\n    int vec_number = state.index_uniform / 4;\n    int component = state.index_uniform - vec_number * 4;\n    state.index_uniform++;\n    vec4 vec;\n    if (vec_number == 0) vec = random_uniforms_1;\n    else if (vec_number == 1) vec = random_uniforms_2;\n    else if (vec_number == 2) vec = random_uniforms_3;\n    else if (vec_number == 3) vec = random_uniforms_4;\n    else if (vec_number == 4) vec = random_uniforms_5;\n    else if (vec_number == 5) vec = random_uniforms_6;\n    else if (vec_number == 6) vec = random_uniforms_7;\n    else if (vec_number == 7) vec = random_uniforms_8;\n    //else abort(); // ???\n\n    if (component == 0) return vec.x;\n    if (component == 1) return vec.y;\n    if (component == 2) return vec.z;\n    if (component == 3) return vec.w;\n}\n","textures.glsl":"// sampler 1D not supported by WebGL\nuniform sampler2D random_gauss;\nuniform sampler2D random_uniform;\nuniform int n_random_gauss;\nuniform int n_random_uniform;\n\nstruct rand_state {\n    int index_uniform;\n    int index_gauss;\n};\n\nvoid rand_init(out rand_state state) {\n    state.index_uniform = 0;\n    state.index_gauss = 0;\n}\n\nvec4 rand_next_gauss4(inout rand_state state) {\n    state.index_gauss++;\n    return texture2D(random_gauss,\n      vec2(float(state.index_gauss-1)/float(n_random_gauss), 0.0));\n}\n\nvec3 rand_next_gauss3(inout rand_state state) {\n    return rand_next_gauss4(state).xyz;\n}\n\nfloat rand_next_uniform(inout rand_state state) {\n    state.index_uniform++;\n    return texture2D(random_uniform,\n      vec2(float(state.index_uniform-1)/float(n_random_uniform), 0.0)).x;\n}\n"},"camera":{"pinhole.glsl":"#include \"scene\"\n#include \"util/camera_helpers.glsl\"\n\nvoid get_camera_ray(vec2 screen_pos, vec2 resolution, out vec3 ray_pos, out vec3 ray, inout rand_state rng) {\n    vec3 cam_pos, cam_x, cam_y, cam_z;\n    float fov_angle;\n\n    get_pinhole_camera(cam_pos, cam_x, cam_y, cam_z, fov_angle);\n\n    vec2 ccd_pos = get_ccd_pos(screen_pos, resolution, rng);\n    ray = normalize(ccd_pos.x*cam_x + ccd_pos.y*cam_y + 1.0/tan(fov_angle*0.5)*cam_z);\n    ray_pos = cam_pos;\n}\n","orthographic.glsl":"#include \"scene\"\n#include \"util/camera_helpers.glsl\"\n\nvoid get_camera_ray(vec2 screen_pos, vec2 resolution, out vec3 ray_pos, out vec3 ray, inout rand_state rng) {\n    vec3 cam_pos, cam_x, cam_y, cam_z;\n    float fov_angle;\n\n    get_pinhole_camera(cam_pos, cam_x, cam_y, cam_z, fov_angle);\n\n    vec2 ccd_pos = get_ccd_pos(screen_pos, resolution, rng);\n    float ccd_size = get_focus_distance() * tan(fov_angle*0.5);\n\n    ray_pos = cam_pos + (cam_x * ccd_pos.x + cam_y * ccd_pos.y) * ccd_size;\n    ray = cam_z;\n}\n","thin_lens.glsl":"#include \"scene\"\n#include \"util/camera_helpers.glsl\"\n\nvoid get_camera_ray(vec2 screen_pos, vec2 resolution, out vec3 ray_pos, out vec3 ray, inout rand_state rng) {\n    vec3 cam_pos, cam_x, cam_y, cam_z;\n    float fov_angle;\n\n    get_pinhole_camera(cam_pos, cam_x, cam_y, cam_z, fov_angle);\n    vec2 ccd_pos = get_ccd_pos(screen_pos, resolution, rng);\n    ray = normalize(ccd_pos.x*cam_x + ccd_pos.y*cam_y + 1.0/tan(fov_angle*0.5)*cam_z);\n\n    float focus = get_focus_distance();\n    float aperture = get_aperture_size();\n    vec3 focus_point = cam_pos + focus*ray;\n    vec2 aperture_sample = normalize(rand_next_gauss3(rng).xy) * sqrt(rand_next_uniform(rng));\n    ray_pos = cam_pos + (aperture_sample.x * cam_x + aperture_sample.y * cam_y) * aperture;\n    ray = normalize(focus_point - ray_pos);\n}\n"},"space_distortion":{"none.glsl":"\nint find_intersection_and_normal(vec3 pos, vec3 ray, int prev_object, int inside_object, float max_distance, out vec3 intersection_pos, out vec3 intersection_normal) {\n  // no space distortion\n  vec4 intersection;\n  int which_object = find_intersection(pos, ray, prev_object, inside_object, intersection);\n  if (intersection.w > max_distance || which_object == 0) {\n    which_object = 0;\n    intersection.w = max_distance;\n  }\n  intersection_pos = pos + ray*intersection.w;\n  intersection_normal = intersection.xyz;\n  return which_object;\n}\n","black_hole.glsl":"\n#ifndef BLACK_HOLE_MAX_REVOLUTIONS\n#define BLACK_HOLE_MAX_REVOLUTIONS 2\n#endif\n\n#ifndef BLACK_HOLE_NSTEPS\n#define BLACK_HOLE_NSTEPS 50\n#endif\n\n#ifndef BLACK_HOLE_RADIUS\n#define BLACK_HOLE_RADIUS 1.0\n#endif\n\n#ifndef BLACK_HOLE_POSITION\n#define BLACK_HOLE_POSITION vec3(0,0, 0.1) //vec3(0,0,0)\n#endif\n\nint find_intersection_and_normal(vec3 pos, vec3 ray, int prev_object, int inside_object, float max_distance, out vec3 intersection_pos, out vec3 intersection_normal) {\n  // black hole\n\n  vec3 old_pos = pos;\n  const vec3 black_hole_pos = BLACK_HOLE_POSITION;\n\n  // initial conditions\n  pos = (pos - black_hole_pos) / BLACK_HOLE_RADIUS;\n\n  float u = 1.0 / length(pos), old_u;\n  float u0 = u;\n\n  vec3 normal_vec = normalize(pos);\n  vec3 tangent_vec = normalize(cross(cross(normal_vec, ray), normal_vec));\n\n  float du = -dot(ray,normal_vec) / dot(ray,tangent_vec) * u;\n  float du0 = du;\n\n  float phi = 0.0;\n  float total_distance = 0.0;\n\n  for (int j=0; j < BLACK_HOLE_NSTEPS; j++) {\n    float step = float(BLACK_HOLE_MAX_REVOLUTIONS) * 2.0*M_PI / float(BLACK_HOLE_NSTEPS);\n\n    // adaptive step size, some ad hoc formulas\n    float max_rel_u_change = (1.0-log(u))*10.0 / float(BLACK_HOLE_NSTEPS);\n    if ((du > 0.0 || (du0 < 0.0 && u0/u < 5.0)) && abs(du) > abs(max_rel_u_change*u) / step)\n      step = max_rel_u_change*u/abs(du);\n\n    old_u = u;\n\n    // Leapfrog scheme\n    u += du*step;\n    float ddu = -u*(1.0 - 1.5*u*u);\n    du += ddu*step;\n\n    float ray_l = 100.0;\n\n    if (u > 0.0) {\n        phi += step;\n\n        pos = (cos(phi)*normal_vec + sin(phi)*tangent_vec) / u * BLACK_HOLE_RADIUS + black_hole_pos;\n\n        ray = pos-old_pos;\n        ray_l = length(ray);\n        ray = ray / ray_l;\n    }\n    // else ray \"escapes\"\n\n    vec4 intersection;\n    int which_object = find_intersection(old_pos, ray, prev_object, inside_object, intersection);\n    if (which_object != 0 && intersection.w < ray_l) {\n      intersection_normal = intersection.xyz;\n      intersection_pos = old_pos + ray*intersection.w;\n      total_distance += intersection.w;\n      if (total_distance > max_distance) return 0;\n      return which_object;\n    }\n\n    total_distance += ray_l;\n    if (total_distace > max_distance) return 0;\n\n    // nonpositive y means ray escaping, u > 1 means event horizon\n    if (u <= 0.0 || u > 1.0) return 0;\n\n    // when the rays bend, even non-convex objects can self-shadow\n    prev_object = 0;\n    old_pos = pos;\n  }\n  return 0;\n}\n"},"rec_filter":{"tent.glsl":"#include \"rand\"\n\nfloat tent_filter_transformation(float x) {\n  x *= 2.0;\n  if (x < 1.0) return sqrt(x) - 1.0;\n  return 1.0 - sqrt(2.0 - x);\n}\n\nvec2 get_rec_filter_sample(rand_state rng) {\n  return vec2(\n    tent_filter_transformation(rand_next_uniform(rng)),\n    tent_filter_transformation(rand_next_uniform(rng)));\n}\n","none.glsl":"#include \"rand\"\n\nvec2 get_rec_filter_sample(rand_state rng) {\n  return vec2(0,0);\n}\n","gaussian.glsl":"#include \"rand\"\n\n#ifndef GAUSS_FILTER_RADIUS\n#define GAUSS_FILTER_RADIUS 0.5\n#endif\n\nvec2 get_rec_filter_sample(rand_state rng) {\n  return rand_next_gauss3(rng).xy * GAUSS_FILTER_RADIUS;\n}\n"},"surfaces":{"box.glsl":"vec4 box_intersection(vec3 pos, vec3 ray, bool inside, vec3 box_size) {\n    float s = 1.0;\n    if (inside) s = -1.0;\n    vec3 corner = pos + s*box_size*sign(ray); // - box_center; <-- assumed to be 0\n    vec3 dists = -corner / ray;\n\n    // handle corner cases (especially with orthogonal cameras)\n    float no_isec_dist = -1.0;\n    if (inside) no_isec_dist = 1e10;\n    if (ray.x == 0.0) dists.x = no_isec_dist;\n    if (ray.y == 0.0) dists.y = no_isec_dist;\n    if (ray.z == 0.0) dists.z = no_isec_dist;\n\n    float dist;\n    if (inside) {\n      dist = min(dists.x, min(dists.y, dists.z));\n    } else {\n      dist = max(dists.x, max(dists.y, dists.z));\n    }\n\n    vec3 normal = vec3(0.0, 0.0, 1.0);\n    if (dist == dists.x) normal = vec3(1.0, 0.0, 0.0);\n    else if (dist == dists.y) normal = vec3(0.0, 1.0, 0.0);\n\n    if (!inside) {\n      vec3 isec_pos = pos + ray*dist;\n      vec3 bounds = (box_size - abs(isec_pos)) * (1.0 - normal);\n      if (bounds.x < 0.0 || bounds.y < 0.0 || bounds.z < 0.0) return vec4(0,0,0,-1);\n    }\n\n    normal = normal * -s * sign(ray);\n    return vec4(normal, dist);\n}\n","dome.glsl":"// dome is just the interior of a sphere\nvec4 dome_intersection(vec3 pos, vec3 ray, float sphere_r) {\n    // ray-sphere-interior intersection\n    vec3 d = pos; // - sphere_pos; // <-- assumed to be origin\n\n    float dotp = dot(d,ray);\n    float c_coeff = dot(d,d) - sphere_r*sphere_r;\n    float ray2 = dot(ray, ray);\n    float discr = dotp*dotp - ray2*c_coeff;\n\n    float sqrt_discr = sqrt(discr);\n    float dist = -dotp + sqrt_discr;\n    dist /= ray2;\n    vec3 normal = (d + ray*dist) / sphere_r;\n\n    return vec4(normal, dist);\n}\n","plane.glsl":"vec4 plane_intersection(vec3 pos, vec3 ray, vec3 plane_normal) {\n    float d = dot(ray, plane_normal);\n    float dist = -dot(pos, plane_normal) / d;\n    vec3 normal = plane_normal * -sign(d);\n    return vec4(plane_normal, dist);\n}\n","julia_set_distance_field.glsl.mustache":"\n  #ifndef quaternion_mult\n  #define quaternion_mult(q1, q2) vec4( (q1).x*(q2).x - dot( (q1).yzw, (q2).yzw ), (q1).x*(q2).yzw + (q2).x*(q1).yzw + cross( (q1).yzw, (q2).yzw ))\n  #endif\n\n  #ifndef quaternion_square\n  #define quaternion_square(q) vec4( (q).x*(q).x - dot( (q).yzw, (q).yzw ), 2.0*(q).x*(q).yzw )\n  #endif\n\n  vec4 q = vec4(p,0), q1, qd = vec4(1,0,0,0);\n  vec4 c = vec4({{cx}}, {{cy}}, {{cz}}, {{cw}});\n\n  for (int i=0; i<{{iterations}}; ++i)\n  {\n    qd = 2.0*quaternion_mult(q,qd);\n    q = quaternion_square(q) + c;\n    if (length(q) > 4.0) break;\n  }\n\n  // The magic distance estimate formula, see the 1989 article:\n  // Hart, Sandin, Kauffman, \"Ray Tracing Deterministic 3-D Fractals\"\n  float l = length(q);\n  l = 0.5 * l * log(l) / length(qd);\n  return l;\n","samplers":{"sphere.glsl":"#include \"rand\"\n#include \"util/math.glsl\"\n\nvoid sphere_sample(inout rand_state rng, out vec3 pos, out vec3 normal, float radius) {\n    vec3 n = normalize(rand_next_gauss3(rng));\n    normal = n;\n    pos = n*radius;\n}\n\n#define get_sphere_area(radius) (4.0*M_PI*(radius)*(radius))\n","box.glsl":"#include \"rand\"\n#include \"util/math.glsl\"\n\nvoid box_sample(inout rand_state rng, out vec3 pos, out vec3 normal, vec3 sz) {\n\n    vec3 sides = vec3(sz.y*sz.z, sz.x*sz.z, sz.x*sz.y);\n    sides *= 1.0 / (sides.x + sides.y + sides.z);\n\n    float u = rand_next_uniform(rng)*2.0 - 1.0;\n    float v = rand_next_uniform(rng)*2.0 - 1.0;\n\n    float p = rand_next_uniform(rng);\n\n    bool side;\n\n    if (p < sides.x) {\n        side = p < sides.x * 0.5;\n        normal = vec3(1,0,0);\n        pos = vec3(1, u, v);\n    }\n    else {\n      p -= sides.x;\n      if (p < sides.y) {\n          side = p < sides.y * 0.5;\n          normal = vec3(0,1,0);\n          pos = vec3(u, 1, v);\n      }\n      else {\n          p -= sides.y;\n          side = p < sides.z * 0.5;\n          normal = vec3(0,0,1);\n          pos = vec3(u, v, 1);\n      }\n    }\n\n    pos *= sz;\n    if (side) {\n        normal = -normal;\n        pos = -pos;\n    }\n}\n\nfloat get_box_area(vec3 sz) {\n  return (sz.x*sz.y + sz.x*sz.z + sz.y*sz.z) * 8.0; // 8 = 2*2*2 \n}\n"},"sphere.glsl":"/**\n * @param ray_pos: ray origin\n * @param ray: ray direction (normalized)\n * @param is_inside: true if ray is inside this object\n * @rerturn vec4(outer_unit_normal, intersection_distance)\n */\nvec4 sphere_intersection(vec3 pos, vec3 ray, bool is_inside, float sphere_r) {\n    // ray-sphere intersection\n    vec3 d = pos; // - sphere_pos; // <-- assumed to be origin\n\n    float dotp = dot(d,ray);\n    float c_coeff = dot(d,d) - sphere_r*sphere_r;\n    float ray2 = dot(ray, ray);\n    float discr = dotp*dotp - ray2*c_coeff;\n\n    const vec4 NO_INTERSECTION = vec4(0.0, 0.0, 0.0, -1.0);\n    if (discr < 0.0) return NO_INTERSECTION;\n\n    float sqrt_discr = sqrt(discr);\n    float dist = -dotp - sqrt_discr;\n    if (is_inside) {\n      dist += sqrt_discr*2.0;\n    }\n    dist /= ray2;\n    vec3 normal = (d + ray*dist) / sphere_r;\n\n    return vec4(normal, dist);\n}\n","box_interior.glsl":"vec4 box_interior_intersection(vec3 pos, vec3 ray, bool inside, vec3 box_size) {\n    vec3 corner = box_size*sign(ray);\n    vec3 diff = pos - corner; // - box_center; <-- assumed to be 0\n    vec3 dists = -diff / ray;\n\n    const float MAX_DIST = 1e10;\n    if (ray.x == 0.0) dists.x = MAX_DIST;\n    if (ray.y == 0.0) dists.y = MAX_DIST;\n    if (ray.z == 0.0) dists.z = MAX_DIST;\n\n    vec3 normal = vec3(0.0, 0.0, 1.0);\n    float dist = min(dists.x, min(dists.y, dists.z));\n\n    if (dist == dists.x) normal = vec3(1.0, 0.0, 0.0);\n    else if (dist == dists.y) normal = vec3(0.0, 1.0, 0.0);\n\n    normal = normal * -sign(ray);\n    return vec4(normal, dist);\n}\n","half_space.glsl":"vec4 half_space_intersection(vec3 pos, vec3 ray, bool is_inside, vec3 plane_normal) {\n    float s = -dot(ray, plane_normal);\n    if ((dot(plane_normal, ray) > 0.0) != is_inside) return vec4(0,0,0,-1);\n    float dist = -dot(pos, plane_normal) / dot(ray,plane_normal);\n    return vec4(plane_normal, dist);\n}\n","distance_field.glsl.mustache":"\nfloat distance_field_func_{{distanceFieldId}}(vec3 p) {\n  {{{distanceFunctionCode}}}\n}\n\nvec3 distance_field_gradient_{{distanceFieldId}}(vec3 pos) {\n  const float eps = float({{gradientDelta}});\n  const vec3 dx = vec3(eps,0,0);\n  const vec3 dy = vec3(0,eps,0);\n  const vec3 dz = vec3(0,0,eps);\n  const float h = 0.5 / eps;\n\n  return vec3(\n    (distance_field_func_{{distanceFieldId}}(pos + dx) - distance_field_func_{{distanceFieldId}}(pos - dx)) * h,\n    (distance_field_func_{{distanceFieldId}}(pos + dy) - distance_field_func_{{distanceFieldId}}(pos - dy)) * h,\n    (distance_field_func_{{distanceFieldId}}(pos + dz) - distance_field_func_{{distanceFieldId}}(pos - dz)) * h\n  );\n}\n\nvec4 distance_field_intersection_{{distanceFieldId}}(vec3 pos, vec3 ray, bool is_inside, bool prev_self) {\n  const vec4 NO_INTERSECTION = vec4(0.0, 0.0, 0.0, -1.0);\n  const float escapeDistance = float({{escapeDistance}});\n  const float scale = float({{scale}});\n  float maxTotalDist = 1e20;\n  const float maxStepSize = float({{maxStepSize}}) * scale;\n  const float distanceThreshold = float({{distanceThreshold}}) * scale;\n\n  {{#convex}}\n  if (!is_inside && prev_self) return NO_INTERSECTION;\n  {{/convex}}\n\n  float fieldSign = is_inside ? -1.0 : 1.0;\n  float totalDist = 0.0;\n\n  {{#boundingRadius}}\n  // bounding sphere check\n  const float boundingR = float({{.}})*float({{scale}});\n  float dotp = dot(pos,ray);\n  float c_coeff = dot(pos,pos) - boundingR*boundingR;\n  float ray2 = dot(ray, ray);\n  float discr = dotp*dotp - ray2*c_coeff;\n  if (discr < 0.0) return NO_INTERSECTION;\n\n  float sqrt_discr = sqrt(discr);\n  totalDist = (-dotp - sqrt_discr) / ray2;\n  maxTotalDist = (totalDist + sqrt_discr*2.0) / ray2;\n  totalDist = max(0.0, totalDist);\n  {{/boundingRadius}}\n\n  for (int i = 0; i < {{maxSteps}}; ++i) {\n    vec3 curPos = (pos + ray*totalDist) / scale;\n    float dist = distance_field_func_{{distanceFieldId}}(curPos) * fieldSign * scale;\n\n    if (dist > escapeDistance || totalDist > maxTotalDist) {\n      return NO_INTERSECTION;\n    }\n    if (dist < distanceThreshold) {\n      vec3 gradient = distance_field_gradient_{{distanceFieldId}}(curPos);\n\n      if (!prev_self || dot(gradient, ray)*fieldSign < 0.0) {\n        return vec4(normalize(gradient), totalDist);\n      }\n    }\n\n    if (dist < distanceThreshold) {\n      dist = distanceThreshold;\n    }\n\n    if (dist > maxStepSize) {\n      dist = maxStepSize;\n    }\n    totalDist += dist;\n  }\n\n  return NO_INTERSECTION;\n}\n"}};
 
 
-},{}],9:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 
-},{}],10:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /*!
  * mustache.js - Logic-less {{mustache}} templates with JavaScript
  * http://github.com/janl/mustache.js
@@ -1336,7 +1504,7 @@ module.exports = {"shading":{"ggx.glsl":"#include \"rand\"\n#include \"scene\"\n
   return mustache;
 }));
 
-},{}],11:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 // A library of seedable RNGs implemented in Javascript.
 //
 // Usage:
@@ -1398,7 +1566,7 @@ sr.tychei = tychei;
 
 module.exports = sr;
 
-},{"./lib/alea":12,"./lib/tychei":13,"./lib/xor128":14,"./lib/xor4096":15,"./lib/xorshift7":16,"./lib/xorwow":17,"./seedrandom":18}],12:[function(require,module,exports){
+},{"./lib/alea":14,"./lib/tychei":15,"./lib/xor128":16,"./lib/xor4096":17,"./lib/xorshift7":18,"./lib/xorwow":19,"./seedrandom":20}],14:[function(require,module,exports){
 // A port of an algorithm by Johannes Baagøe <baagoe@baagoe.com>, 2010
 // http://baagoe.com/en/RandomMusings/javascript/
 // https://github.com/nquinlan/better-random-numbers-for-javascript-mirror
@@ -1514,7 +1682,7 @@ if (module && module.exports) {
 
 
 
-},{}],13:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 // A Javascript implementaion of the "Tyche-i" prng algorithm by
 // Samuel Neves and Filipe Araujo.
 // See https://eden.dei.uc.pt/~sneves/pubs/2011-snfa2.pdf
@@ -1619,7 +1787,7 @@ if (module && module.exports) {
 
 
 
-},{}],14:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 // A Javascript implementaion of the "xor128" prng algorithm by
 // George Marsaglia.  See http://www.jstatsoft.org/v08/i14/paper
 
@@ -1702,7 +1870,7 @@ if (module && module.exports) {
 
 
 
-},{}],15:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 // A Javascript implementaion of Richard Brent's Xorgens xor4096 algorithm.
 //
 // This fast non-cryptographic random number generator is designed for
@@ -1850,7 +2018,7 @@ if (module && module.exports) {
   (typeof define) == 'function' && define   // present with an AMD loader
 );
 
-},{}],16:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 // A Javascript implementaion of the "xorshift7" algorithm by
 // François Panneton and Pierre L'ecuyer:
 // "On the Xorgshift Random Number Generators"
@@ -1949,7 +2117,7 @@ if (module && module.exports) {
 );
 
 
-},{}],17:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 // A Javascript implementaion of the "xorwow" prng algorithm by
 // George Marsaglia.  See http://www.jstatsoft.org/v08/i14/paper
 
@@ -2037,7 +2205,7 @@ if (module && module.exports) {
 
 
 
-},{}],18:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 /*
 Copyright 2014 David Bau.
 
@@ -2289,7 +2457,7 @@ if ((typeof module) == 'object' && module.exports) {
   Math    // math: package containing random, pow, and seedrandom
 );
 
-},{"crypto":9}],19:[function(require,module,exports){
+},{"crypto":11}],21:[function(require,module,exports){
 function parseTracerNameFromSource(source) {
   if (!source) throw new Error('missing source');
   const match = /^\s*vec4\s+(\w+_intersection)\(/m.exec(source);
@@ -2300,8 +2468,7 @@ function parseTracerNameFromSource(source) {
 
 module.exports = parseTracerNameFromSource;
 
-},{}],20:[function(require,module,exports){
-
+},{}],22:[function(require,module,exports){
 function convertToGrayscale(property, value) {
   // if already a number
   if (Number.isFinite(value)) return value;
@@ -2314,7 +2481,8 @@ function convertToGrayscale(property, value) {
 function convertToRgb(property, value) {
   const isScalar = {
     ior: true,
-    roughness: true
+    roughness: true,
+    scattering_anisotropy: true
   };
   if (isScalar[property]) {
     return convertToGrayscale(property, value);
@@ -2338,7 +2506,13 @@ function autoConvert(material, toType) {
     const newMat = {};
     const srcMat = material[key];
     Object.keys(srcMat).forEach((property) => {
-      newMat[property] = convert(property, srcMat[property]);
+      const value = srcMat[property];
+      // textures: leave as-is
+      if (value.texture) {
+        newMat[property] = value;
+      } else {
+        newMat[property] = convert(property, value);
+      }
     });
     converted[key] = newMat;
   });
@@ -2349,7 +2523,7 @@ module.exports = {
   autoConvert
 };
 
-},{}],21:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 function preprocessFile(mainFile, includeMapping, files) {
   // this might break down if utilizing heavy preprocessor magic near
   // the #include directive
@@ -2418,7 +2592,7 @@ function preprocessFile(mainFile, includeMapping, files) {
 
 module.exports = preprocessFile;
 
-},{}],22:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 const tracerData = require('../glsl/index.js');
 const preprocessFile = require('./preprocess_file.js');
 
@@ -2444,7 +2618,7 @@ module.exports = {
   preprocess
 };
 
-},{"../glsl/index.js":8,"./preprocess_file.js":21}],23:[function(require,module,exports){
+},{"../glsl/index.js":10,"./preprocess_file.js":23}],25:[function(require,module,exports){
 module.exports = {
   fixedVecsRandUniforms: {
     random_gauss_1: 'random_normal_4',
@@ -2484,11 +2658,14 @@ module.exports = {
   }
 };
 
-},{}],24:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 const Mustache = require('mustache');
 const tracerData = require('../glsl/index.js');
 
-// this file is also becoming quite terrible
+// this file is also becoming quite terrible. structuring this stuff better
+// would be an interesting problem... but so far not as interesting as
+// raytracing methods :)
+/* eslint-disable no-param-reassign */
 
 function positionAndRotation(m) {
   if (m.length === 3) return { position: m };
@@ -2510,33 +2687,78 @@ function toVec3(x) {
   return `vec3(${x.join(',')})`;
 }
 
-function buildIfElseMaterials(uniqueMaterials, objectsById, shaderColorModel) {
-  function addFirstFlag(list) {
-    const newList = [...list];
-    if (newList.length > 0) newList[0].first = true;
-    return newList;
-  }
+function buildTextureProperties(uniqueMaterials) {
+  const uniqueTextures = {};
+  const textures = [];
+  const uniforms = {};
 
+  uniqueMaterials
+    .map(material => material.material)
+    .forEach((material) => {
+      Object.keys(material)
+        .filter(prop => material[prop].texture)
+        .forEach((property) => {
+          const { texture } = material[property];
+          const key = JSON.stringify(texture);
+          let textureId = uniqueTextures[key];
+          if (!textureId) {
+            textureId = Object.keys(uniqueTextures).length + 1;
+            uniqueTextures[key] = textureId;
+            const textureView = { id: textureId };
+            if (texture.procedural) {
+              textureView.procedural = texture.procedural;
+            } else {
+              textureView.mapping = texture.mapping;
+              uniforms[`texture_${textureId}`] = texture.source;
+            }
+            textures.push(textureView);
+          }
+          material[property].textureId = textureId;
+        });
+    });
+
+  return {
+    textureCode: Mustache.render(
+      tracerData.templates['image_and_procedural_textures.glsl.mustache'],
+      { textures }
+    ),
+    textureUniforms: uniforms
+  };
+}
+
+function buildIfElseMaterials(uniqueMaterials, objectsById, shaderColorModel) {
   function buildGenericProperty(name, type, defaultValue) {
     let defaultVal = defaultValue;
     let formatType;
+    let vectorMember;
     if (type === 'vec3') {
       formatType = toVec3;
       defaultVal = defaultVal || 'vec3(0, 0, 0)';
+      vectorMember = 'xyz';
     } else {
       formatType = x => `float(${x})`;
       defaultVal = defaultVal || '0.0';
+      vectorMember = 'x';
     }
     return {
       name,
       type,
       default: defaultVal,
-      materials: addFirstFlag(uniqueMaterials
+      materials: uniqueMaterials
         .filter(mat => mat.material[name])
-        .map(mat => ({
-          objects: mat.objects.map(obj => ({ id: obj.id })),
-          value: formatType(mat.material[name])
-        })))
+        .map((mat) => {
+          const prop = mat.material[name];
+          const r = {
+            objects: mat.objects.map(obj => ({ id: obj.id }))
+          };
+          if (prop.textureId) {
+            r.textureId = prop.textureId;
+            r.vectorMember = vectorMember;
+          } else {
+            r.value = formatType(prop);
+          }
+          return r;
+        })
     };
   }
 
@@ -2552,12 +2774,14 @@ function buildIfElseMaterials(uniqueMaterials, objectsById, shaderColorModel) {
       buildGenericProperty('ior', 'float', '1.0'),
       buildGenericProperty('roughness', 'float', '0.0'),
       buildGenericProperty('reflectivity', colorType),
-      buildGenericProperty('transparency', colorType)
+      buildGenericProperty('transparency', colorType),
+      buildGenericProperty('mean_scattering_distance', colorType),
+      buildGenericProperty('scattering_anisotropy', 'float', '0.0')
     ]
   });
 }
 
-function buildTextureMaterials(uniqueMaterials, objectsById, shaderColorModel) {
+function buildDataTextureMaterials(uniqueMaterials, objectsById, shaderColorModel) {
   function valueToVec(val) {
     if (Number.isFinite(val)) return [val, val, val, 1.0];
     if (val.length === 4) return val;
@@ -2573,11 +2797,17 @@ function buildTextureMaterials(uniqueMaterials, objectsById, shaderColorModel) {
     ['reflectivity', 0],
     ['transparency', 0],
     ['ior', 1],
-    ['roughness', 0]
+    ['roughness', 0],
+    ['mean_scattering_distance', 0],
+    ['scattering_anisotropy', 0]
   ].forEach(([property, defaultValue]) => {
     materialTextures[property] = [uniqueMaterials.map((material) => {
       if (material.material.hasOwnProperty(property)) {
-        return valueToVec(material.material[property]);
+        const value = material.material[property];
+        if (value.texture) {
+          return valueToVec(defaultValue);
+        }
+        return valueToVec(value);
       }
       return valueToVec(defaultValue);
     })];
@@ -2600,12 +2830,28 @@ function buildTextureMaterials(uniqueMaterials, objectsById, shaderColorModel) {
   const vectorMember = colorType === 'vec3' ? 'xyz' : 'x';
   const colorToProb = colorType === 'vec3' ? '((c).x + (c).y + (c).z) / 3.0' : 'c';
 
+  function addTextures(propertyDescription) {
+    const prop = propertyDescription.name;
+    return {
+      textures: uniqueMaterials
+        .map(material => material.material)
+        .filter(x => x[prop] && x[prop].texture)
+        .map(material => ({
+          id: material.id,
+          textureId: material[prop].textureId,
+          vectorMember: propertyDescription.vectorMember
+        })),
+      ...propertyDescription
+    };
+  }
+
   const code = Mustache.render(tracerData.templates['texture_materials.glsl.mustache'], {
     colorType,
     maxObjectId,
     nMaterials,
     vectorMember,
     colorToProb,
+    emissionTextures: addTextures({ name: 'emission', vectorMember }).textures,
     properties: [
       {
         name: 'ior',
@@ -2631,8 +2877,18 @@ function buildTextureMaterials(uniqueMaterials, objectsById, shaderColorModel) {
         name: 'transparency',
         type: colorType,
         vectorMember
+      },
+      {
+        name: 'mean_scattering_distance',
+        type: colorType,
+        vectorMember
+      },
+      {
+        name: 'scattering_anisotropy',
+        type: 'float',
+        vectorMember: 'x'
       }
-    ]
+    ].map(addTextures)
   });
 
   return { materialTextures, code };
@@ -2644,6 +2900,7 @@ function SceneBuilder() {
   let shaderColorModel = 'rgb';
   let enableMaterialTextures = true;
   let enableGeometryTextures = true;
+  let airMaterial;
 
   const deg2rad = x => x / 180.0 * Math.PI;
   const toFloat = x => `float(${x})`;
@@ -2666,6 +2923,11 @@ function SceneBuilder() {
 
   this.setColorModel = (colorModel) => {
     shaderColorModel = colorModel;
+    return this;
+  };
+
+  this.setAirMaterial = (material) => {
+    airMaterial = { ...material };
     return this;
   };
 
@@ -2728,6 +2990,13 @@ function SceneBuilder() {
     const objectsPerMaterial = {};
     const objectsById = {};
 
+    if (airMaterial) {
+      uniqueMaterials.push({
+        material: airMaterial,
+        objects: [{ id: 0 }]
+      });
+    }
+
     objects.forEach((obj) => {
       const tracer = { ...obj.tracer };
       if (!objectsPerTracer[tracer.name]) {
@@ -2774,7 +3043,6 @@ function SceneBuilder() {
     };
     let objectId = 1;
     uniqueTracers.forEach((uniqTracer) => {
-      /* eslint-disable no-param-reassign */
       uniqTracer.objects = objectsPerTracer[uniqTracer.name];
       uniqTracer.minObjectId = objectId;
       uniqTracer.convex = uniqTracer.objects[0].convex;
@@ -2804,13 +3072,12 @@ function SceneBuilder() {
       });
       uniqTracer.maxObjectId = objectId - 1;
       uniqTracer.nObjects = objectViews.length;
-      /* eslint-enable no-param-reassign */
     });
 
     let materialId = 0;
     uniqueMaterials.forEach((material) => {
+      material.material.id = materialId;
       material.objects.forEach((objectView) => {
-        // eslint-disable-next-line no-param-reassign
         objectView.materialId = materialId;
       });
       materialId++;
@@ -2826,9 +3093,11 @@ function SceneBuilder() {
     });
 
     let materialCode;
-    const materialData = {};
+    const { textureCode, textureUniforms } = buildTextureProperties(uniqueMaterials);
+    const materialData = { ...textureUniforms };
+
     if (enableMaterialTextures) {
-      const { materialTextures, code } = buildTextureMaterials(
+      const { materialTextures, code } = buildDataTextureMaterials(
         uniqueMaterials, objectsById, shaderColorModel
       );
       materialCode = code;
@@ -2838,7 +3107,9 @@ function SceneBuilder() {
         };
       });
     } else {
-      materialCode = buildIfElseMaterials(uniqueMaterials, objectsById, shaderColorModel);
+      materialCode = buildIfElseMaterials(
+        uniqueMaterials, objectsById, shaderColorModel
+      );
     }
 
     const geometryTextureData = {};
@@ -2857,6 +3128,7 @@ function SceneBuilder() {
         tracers: uniqueTracers,
         objects: objectViews
       }),
+      textureCode,
       materialCode,
       Mustache.render(tracerData.templates['select_light.glsl.mustache'], {
         lights,
@@ -2875,9 +3147,11 @@ function SceneBuilder() {
   };
 }
 
+/* eslint-enable no-param-reassign */
+
 module.exports = SceneBuilder;
 
-},{"../glsl/index.js":8,"mustache":10}],25:[function(require,module,exports){
+},{"../glsl/index.js":10,"mustache":12}],27:[function(require,module,exports){
 const tracerData = require('../../glsl/index.js');
 const autoName = require('../auto_tracer_name.js');
 
@@ -2902,7 +3176,7 @@ function Box(width, height, depth) {
 
 module.exports = Box;
 
-},{"../../glsl/index.js":8,"../auto_tracer_name.js":19}],26:[function(require,module,exports){
+},{"../../glsl/index.js":10,"../auto_tracer_name.js":21}],28:[function(require,module,exports){
 const tracerData = require('../../glsl/index.js');
 const autoName = require('../auto_tracer_name.js');
 
@@ -2921,7 +3195,7 @@ function BoxInterior(width, height, depth) {
 
 module.exports = BoxInterior;
 
-},{"../../glsl/index.js":8,"../auto_tracer_name.js":19}],27:[function(require,module,exports){
+},{"../../glsl/index.js":10,"../auto_tracer_name.js":21}],29:[function(require,module,exports){
 const Mustache = require('mustache');
 const tracerData = require('../../glsl/index.js');
 
@@ -2941,6 +3215,7 @@ function DistanceField(distanceFunction, options = {}) {
     escapeDistance: 1e5,
     maxStepSize: 1e5,
     maxSteps: 50,
+    scale: 1.0,
     convex: false
   }, options);
 
@@ -2954,7 +3229,7 @@ function DistanceField(distanceFunction, options = {}) {
 
 module.exports = DistanceField;
 
-},{"../../glsl/index.js":8,"mustache":10}],28:[function(require,module,exports){
+},{"../../glsl/index.js":10,"mustache":12}],30:[function(require,module,exports){
 const tracerData = require('../../glsl/index.js');
 const autoName = require('../auto_tracer_name.js');
 
@@ -2975,7 +3250,7 @@ function Dome(radius) {
 
 module.exports = Dome;
 
-},{"../../glsl/index.js":8,"../auto_tracer_name.js":19}],29:[function(require,module,exports){
+},{"../../glsl/index.js":10,"../auto_tracer_name.js":21}],31:[function(require,module,exports){
 const tracerData = require('../../glsl/index.js');
 const autoName = require('../auto_tracer_name.js');
 
@@ -2997,7 +3272,38 @@ function HalfSpace(normal) {
 
 module.exports = HalfSpace;
 
-},{"../../glsl/index.js":8,"../auto_tracer_name.js":19}],30:[function(require,module,exports){
+},{"../../glsl/index.js":10,"../auto_tracer_name.js":21}],32:[function(require,module,exports){
+const Mustache = require('mustache');
+const tracerData = require('../../glsl/index.js');
+const DistanceField = require('./distance_field.js');
+
+function JuliaSet(center, iterations, options = {}) {
+  const distanceFunctionCode = Mustache.render(
+    tracerData.surfaces['julia_set_distance_field.glsl.mustache'],
+    {
+      iterations,
+      cx: center[0] || 0.0,
+      cy: center[1] || 0.0,
+      cz: center[2] || 0.0,
+      cw: center[3] || 0.0
+    }
+  );
+
+  const distanceField = new DistanceField(distanceFunctionCode,
+    Object.assign({
+      escapeDistance: 10,
+      boundingRadius: 4,
+      maxStepSize: 0.1,
+      maxSteps: 200
+    }, options));
+
+  this.tracer = distanceField.tracer;
+  this.nonConvex = true;
+}
+
+module.exports = JuliaSet;
+
+},{"../../glsl/index.js":10,"./distance_field.js":29,"mustache":12}],33:[function(require,module,exports){
 const tracerData = require('../../glsl/index.js');
 const autoName = require('../auto_tracer_name.js');
 
@@ -3020,7 +3326,7 @@ function Plane(normal) {
 
 module.exports = Plane;
 
-},{"../../glsl/index.js":8,"../auto_tracer_name.js":19}],31:[function(require,module,exports){
+},{"../../glsl/index.js":10,"../auto_tracer_name.js":21}],34:[function(require,module,exports){
 const tracerData = require('../../glsl/index.js');
 const autoName = require('../auto_tracer_name.js');
 
@@ -3045,7 +3351,7 @@ function Sphere(radius) {
 
 module.exports = Sphere;
 
-},{"../../glsl/index.js":8,"../auto_tracer_name.js":19}],"app":[function(require,module,exports){
+},{"../../glsl/index.js":10,"../auto_tracer_name.js":21}],"app":[function(require,module,exports){
 /* global document, window, GLSLBench, isMobileBrowser  */
 /* eslint-disable global-require */
 
@@ -3060,6 +3366,8 @@ const sceneBuilders = {
   'Cornell Box': require('./scenes/cornell-box.js'),
   Window: require('./scenes/window.js'),
   Boxy: require('./scenes/boxy.js'),
+  Disco: require('./scenes/disco.js'),
+  'Julia Set': require('./scenes/julia-set.js'),
   'Stair Spiral': require('./scenes/stair-spiral.js'),
   'Github Avatar': require('./scenes/avatar.js')
 };
@@ -3118,6 +3426,7 @@ function render(options) {
 
   const spec = {
     resolution,
+    gamma: options.gamma,
     source: preprocessor.preprocess('mains/monte_carlo.glsl', {
       renderer: {
         file: `renderer/${options.renderer}.glsl`
@@ -3132,12 +3441,15 @@ function render(options) {
       shading: {
         file: `shading/${options.specular}.glsl`
       },
+      rec_filter: {
+        file: `rec_filter/${options.recFilter}.glsl`
+      },
+      space_distortion: {
+        file: 'space_distortion/none.glsl'
+      },
       parameters: {
         source: Mustache.render(`
         #define N_BOUNCES {{lightBounces}}
-        {{^tentFilter}}
-        #define ENABLE_TENT_FILTER 0
-        {{/tentFilter}}
         {{^lightSampling}}
         #define DISABLE_LIGHT_SAMPLING
         {{/lightSampling}}
@@ -3202,10 +3514,11 @@ function start() {
   });
   gui.add('colors', 'rgb', ['grayscale', 'rgb']);
   gui.add('specular', 'ggx', ['simple', 'ggx']);
-  gui.add('camera', 'pinhole', ['pinhole', 'thin_lens', 'orthographic']);
+  gui.add('camera', 'thin_lens', ['pinhole', 'thin_lens', 'orthographic']);
   gui.add('dataTextures', true);
   gui.add('lightBounces', 4, [1, 2, 3, 4, 5]);
-  gui.add('tentFilter', true);
+  gui.add('gamma', 'sRGB', ['1.0', '1.8', '2.2', 'sRGB']);
+  gui.add('recFilter', 'tent', ['none', 'tent', 'gaussian']);
   gui.addIsolated('showSource', false, undefined, (options) => {
     document.getElementById('shader-source-container').classList.toggle('hidden', !options.showSource);
   });
@@ -3253,7 +3566,7 @@ function start() {
 
 module.exports = { start };
 
-},{"../src/preprocess_helpers.js":22,"../src/rand_helpers.js":23,"./my-gui.js":1,"./scenes/avatar.js":2,"./scenes/boxy.js":3,"./scenes/cornell-box.js":4,"./scenes/example.js":5,"./scenes/stair-spiral.js":6,"./scenes/window.js":7,"mustache":10}],"twgl.js":[function(require,module,exports){
+},{"../src/preprocess_helpers.js":24,"../src/rand_helpers.js":25,"./my-gui.js":1,"./scenes/avatar.js":2,"./scenes/boxy.js":3,"./scenes/cornell-box.js":4,"./scenes/disco.js":5,"./scenes/example.js":6,"./scenes/julia-set.js":7,"./scenes/stair-spiral.js":8,"./scenes/window.js":9,"mustache":12}],"twgl.js":[function(require,module,exports){
 /*!
  * @license twgl.js 4.5.2 Copyright (c) 2015, Gregg Tavares All Rights Reserved.
  * Available via the MIT license.
