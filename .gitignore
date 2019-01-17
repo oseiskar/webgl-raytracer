@@ -1,4 +1,5 @@
 build/
+outputs/
 node_modules/
 
 glsl/index.js

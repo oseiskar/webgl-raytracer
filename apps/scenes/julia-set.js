@@ -43,7 +43,7 @@ function getBuilder(shaderColorType = 'rgb') {
   return new SceneBuilder()
     .setFixedPinholeCamera({
       fov: 55,
-      yaw: 110,
+      yaw: 70,
       pitch: -30,
       target: [0, 0, 1.8],
       distance: 4,
@@ -52,8 +52,7 @@ function getBuilder(shaderColorType = 'rgb') {
     .addObject(new Dome(SKY_DISTANCE), [0, 0, 0], m.dome)
     .addObject(new HalfSpace([0, 0, -1]), [0, 0, SKY_DISTANCE * 0.7], m.sky)
     .addObject(new HalfSpace([0, 0, 1]), [0, 0, 0], m.floor)
-    .addObject(new JuliaSet([0.0, -0.45, -0.7, 0.0], 9,
-      { maxSteps: 500, distanceThreshold: 1e-4, gradientDelta: 1e-6 }), [0, 0, 2.0], m.things)
+    .addObject(new JuliaSet([0.0, -0.45, -0.7, 0.0], 6), [0, 0, 2.0], m.things)
     .setComputationLoadEstimate(6.0);
 }
 
