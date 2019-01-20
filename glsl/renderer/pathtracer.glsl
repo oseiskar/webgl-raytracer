@@ -3,6 +3,7 @@
 #include "rand"
 #include "camera"
 #include "shading"
+#include "space_distortion"
 #include "util/random_helpers.glsl"
 
 #ifndef N_BOUNCES
@@ -29,14 +30,12 @@ vec3 render(vec2 xy, vec2 resolution) {
 
     for (int bounce = 0; bounce <= N_BOUNCES; ++bounce) {
         // find intersection
-        vec4 intersection; // vec4(normal.xyz, distance)
-        int which_object = find_intersection(ray_pos, ray, prev_object, inside_object, intersection);
+        vec3 normal;
+        int which_object = find_intersection_distorted(ray_pos, ray, prev_object, inside_object, ray_pos, normal);
 
         if (which_object == 0) {
-            ray_color = zero_vec3;
+            break;
         } else {
-            vec3 normal = intersection.xyz;
-            ray_pos += intersection.w * ray;
             int material_id = get_material_id(which_object);
 
             if (get_emission(material_id, ray_pos, color)) {

@@ -85,6 +85,9 @@ function render(options) {
       shading: {
         file: `shading/${options.specular}.glsl`
       },
+      space_distortion: {
+        file: 'space_distortion/none.glsl'
+      },
       parameters: {
         source: Mustache.render(`
         #define N_BOUNCES {{lightBounces}}
