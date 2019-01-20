@@ -85,15 +85,15 @@ function render(options) {
       shading: {
         file: `shading/${options.specular}.glsl`
       },
+      rec_filter: {
+        file: `rec_filter/${options.recFilter}.glsl`
+      },
       space_distortion: {
         file: 'space_distortion/none.glsl'
       },
       parameters: {
         source: Mustache.render(`
         #define N_BOUNCES {{lightBounces}}
-        {{^tentFilter}}
-        #define ENABLE_TENT_FILTER 0
-        {{/tentFilter}}
         {{^lightSampling}}
         #define DISABLE_LIGHT_SAMPLING
         {{/lightSampling}}
@@ -161,7 +161,7 @@ function start() {
   gui.add('camera', 'pinhole', ['pinhole', 'thin_lens', 'orthographic']);
   gui.add('dataTextures', true);
   gui.add('lightBounces', 4, [1, 2, 3, 4, 5]);
-  gui.add('tentFilter', true);
+  gui.add('recFilter', 'tent', ['none', 'tent', 'gaussian']);
   gui.addIsolated('showSource', false, undefined, (options) => {
     document.getElementById('shader-source-container').classList.toggle('hidden', !options.showSource);
   });
