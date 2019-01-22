@@ -5,7 +5,7 @@ const Dome = require('../../src/surfaces/dome.js');
 const MaterialHelpers = require('../../src/material_helpers.js');
 
 const SKY_EMISSION = 2.0;
-const COLOR = [97, 212, 207].map(x => x / 255);
+const COLOR = [97, 212, 207].map(x => (x / 255) ** 1.8);
 
 const materials = {
   dome: {
@@ -26,7 +26,7 @@ const materials = {
     ior: 1.5
   },
   floor: {
-    diffuse: [1, 1, 1].map(x => x * 0.915)
+    diffuse: [1, 1, 1].map(x => x * 0.8)
   }
 };
 

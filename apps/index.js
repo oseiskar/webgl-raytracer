@@ -72,6 +72,7 @@ function render(options) {
 
   const spec = {
     resolution,
+    gamma: parseFloat(options.gamma),
     source: preprocessor.preprocess('mains/monte_carlo.glsl', {
       renderer: {
         file: `renderer/${options.renderer}.glsl`
@@ -162,6 +163,7 @@ function start() {
   gui.add('camera', 'thin_lens', ['pinhole', 'thin_lens', 'orthographic']);
   gui.add('dataTextures', true);
   gui.add('lightBounces', 4, [1, 2, 3, 4, 5]);
+  gui.add('gamma', 1.8, [1.0, 1.8, 2.2]);
   gui.add('recFilter', 'tent', ['none', 'tent', 'gaussian']);
   gui.addIsolated('showSource', false, undefined, (options) => {
     document.getElementById('shader-source-container').classList.toggle('hidden', !options.showSource);

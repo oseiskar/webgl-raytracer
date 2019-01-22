@@ -5,7 +5,7 @@ const Dome = require('../../src/surfaces/dome.js');
 const MaterialHelpers = require('../../src/material_helpers.js');
 
 const SKY_EMISSION = 1.5;
-const COLOR = [97, 212, 207].map(x => x / 255);
+const COLOR = [97, 212, 207].map(x => (x / 255 * 0.6) ** 1.8);
 
 const materials = {
   dome: {
@@ -26,9 +26,9 @@ const materials = {
         procedural: `
           vec3 uv = pos * 4.0;
           if (sin(uv.x) + sin(uv.y) + sin(uv.z) > 0.5) {
-            return vec4(1,1,1,0) * 0.65;
+            return vec4(1,1,1,0) * 0.25;
           } else {
-            return vec4(1,1,1,0) * 0.9;
+            return vec4(1,1,1,0) * 0.4;
           }
         `
       }

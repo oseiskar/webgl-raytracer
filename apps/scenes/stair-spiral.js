@@ -26,7 +26,7 @@ const materials = {
     diffuse: [0.6, 0.1, 0.1]
   },
   floor: {
-    diffuse: [0.8, 0.8, 0.8]
+    diffuse: [0.6, 0.6, 0.6]
   },
   glass: {
     reflectivity: 0.05,

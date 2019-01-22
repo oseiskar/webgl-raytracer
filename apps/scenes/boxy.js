@@ -12,13 +12,13 @@ const materials = {
     emission: [1.0, 1.0, 0.9].map(x => x * 40)
   },
   walls: {
-    diffuse: 0.8
+    diffuse: 0.6
   },
   ceiling: {
-    diffuse: 0.8
+    diffuse: 0.6
   },
   mineral: {
-    diffuse: [0.3, 0.3, 0.5],
+    diffuse: [0.2, 0.2, 0.5],
     reflectivity: [0.1, 0.1, 0.2],
     roughness: 0.02
   },

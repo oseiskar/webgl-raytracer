@@ -9,20 +9,20 @@ const Plane = require('../../src/surfaces/plane.js');
 const Box = require('../../src/surfaces/box.js');
 const MaterialHelpers = require('../../src/material_helpers.js');
 
-const EMISSION = 25.0;
+const EMISSION = 30.0;
 
 const materials = {
   leftWall: {
-    diffuse: [0.9, 0.2, 0.2]
+    diffuse: [0.6, 0.05, 0.05]
   },
   rightWall: {
-    diffuse: [0.2, 0.9, 0.2]
+    diffuse: [0.05, 0.6, 0.05]
   },
   others: {
-    diffuse: 0.9
+    diffuse: 0.7
   },
   light: {
-    emission: [1, 0.9, 0.7].map(x => x * EMISSION)
+    emission: [1, 0.9, 0.6].map(x => x * EMISSION)
   }
 };
 

@@ -7,7 +7,7 @@ const MaterialHelpers = require('../../src/material_helpers.js');
 const ROOM_H = 2.0;
 const ROOM_W = 5.0;
 const LIGHT_R = 0.4;
-const BRIGHTNESS = 75;
+const BRIGHTNESS = 60;
 
 function emissionPerSurfaceArea(color, sphereR, totalIntensity = 1.0) {
   const mult = totalIntensity / (4 * Math.PI * sphereR * sphereR);
@@ -22,7 +22,7 @@ const materials = {
     ior: 1.5
   },
   teal: {
-    reflectivity: [0.25, 0.4, 0.45],
+    reflectivity: [0.2, 0.4, 0.5],
     roughness: {
       texture: {
         procedural: `
@@ -32,26 +32,26 @@ const materials = {
         `
       }
     },
-    diffuse: [0.25, 0.4, 0.45]
+    diffuse: [0.2, 0.4, 0.5]
   },
   plastic: {
     reflectivity: 0.03,
     roughness: 0.15,
-    diffuse: [0.4, 0.4, 0.1]
+    diffuse: [0.4, 0.4, 0.05]
   },
   light1: {
-    emission: emissionPerSurfaceArea([0.8, 0.8, 1.0], LIGHT_R, BRIGHTNESS)
+    emission: emissionPerSurfaceArea([0.7, 0.7, 1.0], LIGHT_R, BRIGHTNESS)
   },
   light2: {
-    emission: emissionPerSurfaceArea([1.0, 0.8, 0.6], LIGHT_R, BRIGHTNESS)
+    emission: emissionPerSurfaceArea([1.0, 0.7, 0.5], LIGHT_R, BRIGHTNESS)
   },
   walls: {
-    diffuse: 0.6
+    diffuse: 0.25
   },
   floor: {
     reflectivity: 0.3,
     roughness: 0.05,
-    diffuse: 0.1
+    diffuse: 0.05
   }
 };
 

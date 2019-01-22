@@ -15,7 +15,6 @@ const materials = {
     emission: [0.5, 0.5, 0.55].map(x => x * 1.7)
   },
   skyHorizon: {
-    diffuse: [0.7, 0.7, 1.0].map(x => x * 0.2),
     emission: {
       texture: {
         source: {
@@ -26,13 +25,10 @@ const materials = {
     }
   },
   walls: {
-    diffuse: 0.8
+    diffuse: 0.6
   },
   ground: {
-    diffuse: [0.8, 0.7, 0.5]
-  },
-  floor: {
-    diffuse: [0.8, 0.7, 0.5]
+    diffuse: [0.9, 0.75, 0.5].map(x => x * 0.6)
   },
   sculpture: {
     diffuse: 0.9
