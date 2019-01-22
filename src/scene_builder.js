@@ -1,7 +1,9 @@
 const Mustache = require('mustache');
 const tracerData = require('../glsl/index.js');
 
-// this file is also becoming quite terrible
+// this file is also becoming quite terrible. structuring this stuff better
+// would be an interesting problem... but so far not as interesting as
+// raytracing methods :)
 /* eslint-disable no-param-reassign */
 
 function positionAndRotation(m) {
@@ -111,7 +113,9 @@ function buildIfElseMaterials(uniqueMaterials, objectsById, shaderColorModel) {
       buildGenericProperty('ior', 'float', '1.0'),
       buildGenericProperty('roughness', 'float', '0.0'),
       buildGenericProperty('reflectivity', colorType),
-      buildGenericProperty('transparency', colorType)
+      buildGenericProperty('transparency', colorType),
+      buildGenericProperty('mean_scattering_distance', colorType),
+      buildGenericProperty('scattering_coefficient', 'float', '0.0')
     ]
   });
 }
@@ -132,7 +136,9 @@ function buildDataTextureMaterials(uniqueMaterials, objectsById, shaderColorMode
     ['reflectivity', 0],
     ['transparency', 0],
     ['ior', 1],
-    ['roughness', 0]
+    ['roughness', 0],
+    ['mean_scattering_distance', 0],
+    ['scattering_coefficient', 0]
   ].forEach(([property, defaultValue]) => {
     materialTextures[property] = [uniqueMaterials.map((material) => {
       if (material.material.hasOwnProperty(property)) {
@@ -210,6 +216,16 @@ function buildDataTextureMaterials(uniqueMaterials, objectsById, shaderColorMode
         name: 'transparency',
         type: colorType,
         vectorMember
+      },
+      {
+        name: 'mean_scattering_distance',
+        type: colorType,
+        vectorMember
+      },
+      {
+        name: 'scattering_coefficient',
+        type: 'float',
+        vectorMember: 'x'
       }
     ].map(addTextures)
   });
@@ -223,6 +239,7 @@ function SceneBuilder() {
   let shaderColorModel = 'rgb';
   let enableMaterialTextures = true;
   let enableGeometryTextures = true;
+  let airMaterial;
 
   const deg2rad = x => x / 180.0 * Math.PI;
   const toFloat = x => `float(${x})`;
@@ -245,6 +262,11 @@ function SceneBuilder() {
 
   this.setColorModel = (colorModel) => {
     shaderColorModel = colorModel;
+    return this;
+  };
+
+  this.setAirMaterial = (material) => {
+    airMaterial = { ...material };
     return this;
   };
 
@@ -306,6 +328,13 @@ function SceneBuilder() {
     const objectsPerTracer = {};
     const objectsPerMaterial = {};
     const objectsById = {};
+
+    if (airMaterial) {
+      uniqueMaterials.push({
+        material: airMaterial,
+        objects: [{ id: 0 }]
+      });
+    }
 
     objects.forEach((obj) => {
       const tracer = { ...obj.tracer };

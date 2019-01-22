@@ -27,14 +27,24 @@ vec3 render(vec2 xy, vec2 resolution) {
     color_type color;
 
     float choice_sample = rand_next_uniform(rng);
+    int inside_object_material_id = get_material_id(inside_object);
 
     for (int bounce = 0; bounce <= N_BOUNCES; ++bounce) {
         // find intersection
         vec3 normal;
-        int which_object = find_intersection_distorted(ray_pos, ray, prev_object, inside_object, ray_pos, normal);
+        float scattering_distance = sample_scattering_distance(inside_object_material_id, color, rng);
+        int which_object = find_intersection_and_normal(ray_pos, ray, prev_object, inside_object, scattering_distance, ray_pos, normal);
 
         if (which_object == 0) {
-            break;
+            // didn't hit anything
+            if (scattering_distance < 1e10) {
+                // ... due to scattering before that
+                ray_color *= color;
+                ray = sample_scattered_ray(inside_object_material_id, ray, rng);
+                prev_object = 0;
+            } else {
+                break;
+            }
         } else {
             int material_id = get_material_id(which_object);
 
@@ -62,6 +72,8 @@ vec3 render(vec2 xy, vec2 resolution) {
                     inside_object = 0;
                 }
                 else inside_object = which_object;
+
+                inside_object_material_id = get_material_id(inside_object);
             }
             prev_object = which_object;
         }

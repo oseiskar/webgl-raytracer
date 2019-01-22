@@ -9,6 +9,10 @@ const MaterialHelpers = require('../../src/material_helpers.js');
 const COLOR = [97, 212, 207].map(x => x / 255);
 
 const materials = {
+  air: {
+    mean_scattering_distance: 20.0,
+    scattering_coefficient: 0.2
+  },
   light: {
     emission: [1, 1, 1].map(x => x * 2.0)
   },
@@ -73,6 +77,7 @@ function getBuilder(shaderColorType = 'rgb') {
       distance: 25,
       apertureSize: 0.07
     })
+    .setAirMaterial(m.air)
     .addObject(new Box(6, 6, 3), [10, -10, 15], m.light)
     .addObject(new HalfSpace([0, 0, 1]), [0, 0, 0], m.floor)
     .setComputationLoadEstimate(6.0);

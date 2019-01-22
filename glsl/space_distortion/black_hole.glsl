@@ -15,7 +15,7 @@
 #define BLACK_HOLE_POSITION vec3(0,0, 0.1) //vec3(0,0,0)
 #endif
 
-int find_intersection_distorted(vec3 pos, vec3 ray, int prev_object, int inside_object, out vec3 intersection_pos, out vec3 intersection_normal) {
+int find_intersection_and_normal(vec3 pos, vec3 ray, int prev_object, int inside_object, float max_distance, out vec3 intersection_pos, out vec3 intersection_normal) {
   // black hole
 
   vec3 old_pos = pos;
@@ -34,6 +34,7 @@ int find_intersection_distorted(vec3 pos, vec3 ray, int prev_object, int inside_
   float du0 = du;
 
   float phi = 0.0;
+  float total_distance = 0.0;
 
   for (int j=0; j < BLACK_HOLE_NSTEPS; j++) {
     float step = float(BLACK_HOLE_MAX_REVOLUTIONS) * 2.0*M_PI / float(BLACK_HOLE_NSTEPS);
@@ -68,15 +69,20 @@ int find_intersection_distorted(vec3 pos, vec3 ray, int prev_object, int inside_
     if (which_object != 0 && intersection.w < ray_l) {
       intersection_normal = intersection.xyz;
       intersection_pos = old_pos + ray*intersection.w;
+      total_distance += intersection.w;
+      if (total_distance > max_distance) return 0;
       return which_object;
     }
+
+    total_distance += ray_l;
+    if (total_distace > max_distance) return 0;
+
+    // nonpositive y means ray escaping, u > 1 means event horizon
+    if (u <= 0.0 || u > 1.0) return 0;
 
     // when the rays bend, even non-convex objects can self-shadow
     prev_object = 0;
     old_pos = pos;
   }
-
-  // the event horizon is at u = 1
-  // if (u > 1.0) "stop rendering"
   return 0;
 }

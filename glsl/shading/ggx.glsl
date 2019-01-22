@@ -2,6 +2,7 @@
 #include "scene"
 #include "util/math.glsl"
 #include "util/random_helpers.glsl"
+#include "shading/scattering.glsl"
 
 /*
  * GGX-based microfacet model suitable for bidirectional tracing of

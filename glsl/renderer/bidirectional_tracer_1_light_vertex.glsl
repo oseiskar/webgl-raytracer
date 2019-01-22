@@ -68,6 +68,7 @@ vec3 render(vec2 xy, vec2 resolution) {
     int prev_object = 0; // assumed to be OBJ_NONE
     int inside_object = 0;
     vec3 result_color = zero_vec3;
+    int inside_object_material_id = get_material_id(inside_object);
 
     float last_sampling_prob = 0.0;
 
@@ -83,10 +84,21 @@ vec3 render(vec2 xy, vec2 resolution) {
 
     for (int bounce = 0; bounce <= N_BOUNCES; ++bounce)  {
         vec4 intersection; // vec4(normal.xyz, distance)
+        float scattering_distance = sample_scattering_distance(inside_object_material_id, color, rng);
         int which_object = find_intersection(ray_pos, ray, prev_object, inside_object, intersection);
 
-        if (which_object == 0) {
-            ray_color = zero_vec3;
+        if (which_object == 0 || intersection.w > scattering_distance) {
+            // did not hit anything
+            if (scattering_distance < 1e10) {
+                // due to scattering
+                ray_color *= color;
+                ray_pos += scattering_distance * ray;
+                ray = sample_scattered_ray(inside_object_material_id, ray, rng);
+                prev_object = 0;
+                last_sampling_prob = 0.0;
+            } else {
+                break;
+            }
         } else {
             vec3 normal = intersection.xyz;
             ray_pos += intersection.w * ray;
@@ -97,7 +109,8 @@ vec3 render(vec2 xy, vec2 resolution) {
                 float probThis, probOther;
 
                 if (last_sampling_prob > 0.0 && has_sampler(which_object)) {
-                  probThis = change_of_variables * last_sampling_prob;
+                  float nonScatteringProb = 1.0 - get_scattering_prob(inside_object_material_id, intersection.w);
+                  probThis = change_of_variables * last_sampling_prob * nonScatteringProb;
                   probOther = light_sample_area_probability;
                 } else {
                     probOther = 0.0;
@@ -132,7 +145,10 @@ vec3 render(vec2 xy, vec2 resolution) {
                     float probThis = light_sample_area_probability;
                     float probOther = change_of_variables * prob_sampling;
 
-                    color_type contribution = brdf_cos_weighted(material_id, going_out, ray_pos, normal, ray_in, shadow_ray);
+                    float shadowNonScatteringProb = 1.0 - get_scattering_prob(inside_object_material_id, shadow_dist);
+                    probOther *= shadowNonScatteringProb;
+
+                    color_type contribution = shadowNonScatteringProb * brdf_cos_weighted(material_id, going_out, ray_pos, normal, ray_in, shadow_ray);
                     color_type f_over_p = contribution * change_of_variables / probThis;
                     result_color += ray_color * light_emission * f_over_p * weight2(probThis, probOther);
                 }
@@ -147,6 +163,7 @@ vec3 render(vec2 xy, vec2 resolution) {
                     inside_object = 0;
                 }
                 else inside_object = which_object;
+                inside_object_material_id = get_material_id(inside_object);
             }
 
             prev_object = which_object;

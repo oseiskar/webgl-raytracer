@@ -2,6 +2,7 @@
 #include "scene"
 #include "util/math.glsl"
 #include "util/random_helpers.glsl"
+#include "shading/scattering.glsl"
 
 bool color_prob_choice(color_type color, out color_type out_color, inout float choice_sample) {
     float p = color2prob(color);
