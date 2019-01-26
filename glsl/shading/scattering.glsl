@@ -4,11 +4,22 @@
 #include "util/random_helpers.glsl"
 
 vec3 sample_scattered_ray(int material_id, vec3 ray_in, inout rand_state rng) {
-    float s = get_scattering_coefficient(material_id, vec3(0,0,0));
-    if (s < 0.0) {
-      ray_in = -ray_in;
+    // Henyey-Greenstein phase function,
+    // see https://www.astro.umd.edu/~jph/HG_note.pdf
+    float g = get_scattering_anisotropy(material_id, vec3(0,0,0));
+    if (g == 0.0) {
+        // the sampling formula below breaks at g == 0.0, which corresponds to
+        // fully isotropic scattering, which is easier to model like this
+        return normalize(rand_next_gauss3(rng));
     }
-    return normalize(ray_in + s * rand_next_gauss3(rng));
+
+    float s = 2.0 * rand_next_uniform(rng) - 1.0;
+    float a = (1.0 - g*g) / (1.0 + g*s);
+    float mu = 0.5 / g * (1.0 + g*g - a*a);
+
+    vec3 perp = rand_next_gauss3(rng);
+    perp = normalize(perp - ray_in*dot(ray_in, perp));
+    return mu * ray_in +  sqrt(1.0 - mu*mu) * perp;
 }
 
 float sample_scattering_distance(int material_id, out color_type col, inout rand_state rng) {

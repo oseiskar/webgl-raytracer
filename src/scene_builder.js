@@ -115,7 +115,7 @@ function buildIfElseMaterials(uniqueMaterials, objectsById, shaderColorModel) {
       buildGenericProperty('reflectivity', colorType),
       buildGenericProperty('transparency', colorType),
       buildGenericProperty('mean_scattering_distance', colorType),
-      buildGenericProperty('scattering_coefficient', 'float', '0.0')
+      buildGenericProperty('scattering_anisotropy', 'float', '0.0')
     ]
   });
 }
@@ -138,7 +138,7 @@ function buildDataTextureMaterials(uniqueMaterials, objectsById, shaderColorMode
     ['ior', 1],
     ['roughness', 0],
     ['mean_scattering_distance', 0],
-    ['scattering_coefficient', 0]
+    ['scattering_anisotropy', 0]
   ].forEach(([property, defaultValue]) => {
     materialTextures[property] = [uniqueMaterials.map((material) => {
       if (material.material.hasOwnProperty(property)) {
@@ -223,7 +223,7 @@ function buildDataTextureMaterials(uniqueMaterials, objectsById, shaderColorMode
         vectorMember
       },
       {
-        name: 'scattering_coefficient',
+        name: 'scattering_anisotropy',
         type: 'float',
         vectorMember: 'x'
       }

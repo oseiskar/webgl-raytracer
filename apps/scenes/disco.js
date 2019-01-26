@@ -11,7 +11,7 @@ const COLOR = [97, 212, 207].map(x => x / 255);
 const materials = {
   air: {
     mean_scattering_distance: 20.0,
-    scattering_coefficient: 0.2
+    scattering_anisotropy: 0.9
   },
   light: {
     emission: [1, 1, 1].map(x => x * 2.0)
