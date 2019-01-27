@@ -10,14 +10,14 @@ const COLOR = [97, 212, 207].map(x => x / 255);
 
 const materials = {
   air: {
-    mean_scattering_distance: 20.0,
-    scattering_anisotropy: 0.9
+    mean_scattering_distance: [1.0, 1.0, 0.6].map(x => x * 30),
+    scattering_anisotropy: 0.95
   },
   light: {
-    emission: [1, 1, 1].map(x => x * 2.0)
+    emission: [1, 1, 1].map(x => x * 3.0)
   },
   warmLight: {
-    emission: [1, 0.9, 0.8].map(x => x * 1.0)
+    emission: [1, 0.9, 0.8].map(x => x * 1.2)
   },
   things: {
     reflectivity: 0.3,
@@ -48,7 +48,7 @@ const materials = {
         procedural: `
           vec3 uv = pos * 4.0;
           if (sin(uv.x) + sin(uv.y) + sin(uv.z) > 0.5) {
-            return vec4(sin(pos.y)*0.5 + 0.5,0,cos(pos.x*0.4)*0.2 + 0.5,0) / (1.0 + length(pos) * 0.3)*5.0;
+            return vec4(sin(pos.y)*0.5 + 0.5,0,cos(pos.x*0.4)*0.2 + 0.5,0) / (1.0 + length(pos) * 0.3) * 7.0;
           } else {
             return vec4(0,0,0,0);
           }
