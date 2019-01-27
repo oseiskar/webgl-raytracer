@@ -13,8 +13,7 @@ vec3 sample_scattered_ray(int material_id, vec3 ray_in, inout rand_state rng) {
         return normalize(rand_next_gauss3(rng));
     }
 
-    float s = 2.0 * rand_next_uniform(rng) - 1.0;
-    float a = (1.0 - g*g) / (1.0 + g*s);
+    float a = (1.0 - g*g) / (1.0 - g + 2.0*g*rand_next_uniform(rng));
     float mu = 0.5 / g * (1.0 + g*g - a*a);
 
     vec3 perp = rand_next_gauss3(rng);
@@ -25,8 +24,8 @@ vec3 sample_scattered_ray(int material_id, vec3 ray_in, inout rand_state rng) {
 float sample_scattering_distance(int material_id, out color_type col, inout rand_state rng) {
     color_type distances = get_mean_scattering_distance(material_id, vec3(0,0,0));
     float dist = color2prob(distances);
-    col = distances / dist;
     if (dist > 0.0) {
+        col = distances / dist;
         return -log(rand_next_uniform(rng)) * dist;
     } else {
         return 1e10;

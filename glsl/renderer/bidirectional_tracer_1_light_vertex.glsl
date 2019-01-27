@@ -70,7 +70,7 @@ vec3 render(vec2 xy, vec2 resolution) {
     vec3 result_color = zero_vec3;
     int inside_object_material_id = get_material_id(inside_object);
 
-    float last_sampling_prob = 0.0;
+    float last_surface_p = 0.0;
 
     vec3 light_point, light_normal;
     float light_sample_area_probability;
@@ -94,8 +94,8 @@ vec3 render(vec2 xy, vec2 resolution) {
                 ray_color *= color;
                 ray_pos += scattering_distance * ray;
                 ray = sample_scattered_ray(inside_object_material_id, ray, rng);
+                last_surface_p = 0.0;
                 prev_object = 0;
-                last_sampling_prob = 0.0;
             } else {
                 break;
             }
@@ -105,13 +105,15 @@ vec3 render(vec2 xy, vec2 resolution) {
             int material_id = get_material_id(which_object);
 
             if (get_emission(material_id, ray_pos, color)) {
-                float change_of_variables = -dot(normal, ray) / (intersection.w*intersection.w);
                 float probThis, probOther;
 
-                if (last_sampling_prob > 0.0 && has_sampler(which_object)) {
-                  float nonScatteringProb = 1.0 - get_scattering_prob(inside_object_material_id, intersection.w);
-                  probThis = change_of_variables * last_sampling_prob * nonScatteringProb;
-                  probOther = light_sample_area_probability;
+                bool has_samp = has_sampler(which_object);
+                if (last_surface_p > 0.0 && has_sampler(which_object)) {
+                    float no_scatter_prob = 1.0 - get_scattering_prob(inside_object_material_id, intersection.w);
+                    float change_of_variables = -dot(normal, ray) / (intersection.w*intersection.w);
+                    // surface scattering
+                    probThis = change_of_variables * last_surface_p * no_scatter_prob;
+                    probOther = light_sample_area_probability;
                 } else {
                     probOther = 0.0;
                     probThis = 1.0;
@@ -125,11 +127,11 @@ vec3 render(vec2 xy, vec2 resolution) {
             }
 
             vec3 ray_in = ray;
-            last_sampling_prob = sample_ray_and_prob(material_id, going_out, ray_pos, normal, ray, color, rng);
+            last_surface_p = sample_ray_and_prob(material_id, going_out, ray_pos, normal, ray, color, rng);
             float cur_sample_weight = color2prob(color)*(ray_color.x + ray_color.y + ray_color.z) / 3.0;
-            if (last_sampling_prob == 0.0 || cur_sample_weight > MAX_SAMPLE_WEIGHT) break;
+            if (last_surface_p == 0.0 || cur_sample_weight > MAX_SAMPLE_WEIGHT) break;
 
-            if (last_sampling_prob > 0.0 && bounce < N_BOUNCES && inside_object == 0) {
+            if (last_surface_p > 0.0 && bounce < N_BOUNCES && inside_object == 0) {
                 // no lights inside transparent objects supported
                 vec3 shadow_ray = light_point - ray_pos;
                 float shadow_dist = length(shadow_ray);
@@ -145,15 +147,18 @@ vec3 render(vec2 xy, vec2 resolution) {
                     float probThis = light_sample_area_probability;
                     float probOther = change_of_variables * prob_sampling;
 
-                    float shadowNonScatteringProb = 1.0 - get_scattering_prob(inside_object_material_id, shadow_dist);
-                    probOther *= shadowNonScatteringProb;
+                    float no_scatter_prob = 1.0 - get_scattering_prob(inside_object_material_id, shadow_dist);
+                    probOther *= no_scatter_prob;
 
-                    color_type contribution = shadowNonScatteringProb * brdf_cos_weighted(material_id, going_out, ray_pos, normal, ray_in, shadow_ray);
+                    color_type contribution = no_scatter_prob * brdf_cos_weighted(material_id, going_out, ray_pos, normal, ray_in, shadow_ray);
                     color_type f_over_p = contribution * change_of_variables / probThis;
-                    result_color += ray_color * light_emission * f_over_p * weight2(probThis, probOther);
+                    color_type total_weight = f_over_p * weight2(probThis, probOther);
+                    if (color2prob(total_weight) > 0.0) { // handle some numerical issues
+                        result_color += ray_color * light_emission * total_weight;
+                    }
                 }
             } else {
-                last_sampling_prob = 0.0;
+                last_surface_p = 0.0;
             }
             ray_color *= color;
 
