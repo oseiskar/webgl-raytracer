@@ -6,8 +6,6 @@ const Sphere = require('../../src/surfaces/sphere.js');
 const Box = require('../../src/surfaces/box.js');
 const MaterialHelpers = require('../../src/material_helpers.js');
 
-const COLOR = [97, 212, 207].map(x => x / 255);
-
 const materials = {
   air: {
     mean_scattering_distance: [1.0, 1.0, 0.6].map(x => x * 50),
@@ -17,12 +15,13 @@ const materials = {
     emission: [1, 1, 1].map(x => x * 3.0)
   },
   warmLight: {
-    emission: [1, 0.9, 0.8].map(x => x * 1.2)
+    emission: [1, 0.9, 0.8].map(x => x * 1.2),
+    diffuse: [0.5, 0.5, 0.5]
   },
   things: {
     reflectivity: 0.3,
-    roughness: 0.02,
-    diffuse: COLOR
+    roughness: 0.03,
+    diffuse: [0.9, 0.9, 0.9]
   },
   glass: {
     reflectivity: 0.1,
@@ -33,16 +32,8 @@ const materials = {
   matte: {
     diffuse: [0.9, 0.9, 0.9]
   },
-  red: {
-    diffuse: [0.9, 0.4, 0.4]
-  },
-  plastic: {
-    reflectivity: 0.03,
-    roughness: 0.15,
-    diffuse: [0.4, 0.4, 0.1]
-  },
   floor: {
-    diffuse: [0.2, 0.2, 0.2],
+    diffuse: [0.1, 0.1, 0.1],
     emission: {
       texture: {
         procedural: `
