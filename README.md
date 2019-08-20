@@ -40,17 +40,18 @@ everything not related to "worlds with two triangles".
    pinhole and orthographic camera models
  - [x] tent [reconstruction filter](https://imgur.com/a/jksVw)
  - [x] image-based and procedural textures
+ - [x] fog
+ - [x] tone mapping / gamma correction (sRGB)
 
 ### To-do list
 
- - [ ] fog and subsurface scattering
- - [ ] tone mapping / gamma correction
+ - [ ] faster subsurface scattering
  - [ ] cylinders and cones
  - [ ] constructive solid geometry
  - [ ] triangle meshes & octrees
  - [ ] interval arithmetic implicit surfaces
  - [ ] spectral color model (enables dispersion)
- - [ ] Airy disc reconstruction filter (blurs highlights)
+ - [ ] reconstruction filter for blurring highlights
 
 ## References
 
