@@ -13,7 +13,7 @@ everything not related to "worlds with two triangles".
 
 ![img](https://oseiskar.github.io/img/webgl-raytracer.png)
 
-## Local development
+## Development
 
 ### Installation
 
@@ -23,8 +23,19 @@ everything not related to "worlds with two triangles".
 
 ### Usage
 
-    python -m SimpleHTTPServer # or similar
+    python3 -m http.server 8000 --bind 127.0.0.1 # or similar
     # then go to http://localhost:8000/
+
+### Deployment
+
+    # TODO: hacky
+    git checkout gh-pages
+    git reset --hard A_COMMIT_SHA_WITHOUT_BUNDLE_JS
+    git rebase master
+    npm run build
+    git add .
+    git commit -m "Deploy"
+    git push -f
 
 ## Features
 
