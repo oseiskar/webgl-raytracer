@@ -1,16 +1,16 @@
 {
   "dependencies": {
-    "brfs": "^2.0.1",
+    "brfs": "^2.0.2",
     "browserify": "^16.2.3",
-    "mustache": "^3.0.1",
+    "mustache": "^3.2.1",
     "seedrandom": "^2.4.4",
-    "twgl.js": "^4.5.2"
+    "twgl.js": "^4.24.0"
   },
   "devDependencies": {
-    "eslint": "^5.11.1",
-    "eslint-config-airbnb-base": "^13.1.0",
-    "eslint-plugin-import": "^2.14.0",
-    "watchify": "^3.11.0"
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb-base": "^13.2.0",
+    "eslint-plugin-import": "^2.26.0",
+    "watchify": "^4.0.0"
   },
   "scripts": {
     "build": "./build.sh && npm run browserify",
