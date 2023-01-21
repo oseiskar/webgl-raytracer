@@ -31,7 +31,7 @@ everything not related to "worlds with two triangles".
     # TODO: hacky
     git checkout gh-pages
     git reset --hard A_COMMIT_SHA_WITHOUT_BUNDLE_JS
-    git rebase master
+    git rebase main
     npm run build
     git add .
     git commit -m "Deploy"
