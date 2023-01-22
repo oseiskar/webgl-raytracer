@@ -6,6 +6,7 @@ const Mustache = require('mustache');
 const preprocessor = require('../src/preprocess_helpers.js');
 const randHelpers = require('../src/rand_helpers.js');
 const GUI = require('./my-gui.js');
+const DynamicCamera = require('./dynamic-camera.js');
 
 const sceneBuilders = {
   Example: require('./scenes/example.js'),
@@ -39,6 +40,8 @@ function getLoadProfile(mode) {
   return Math.floor(-slowdownFactor);
 }
 
+let dynamicCamera;
+
 function render(options) {
   const element = document.getElementById('shader-container');
   const isFullScreen = options.resolution === 'fullscreen';
@@ -59,10 +62,12 @@ function render(options) {
   const maxSampleWeight = options.specular === 'ggx' ? 10.0 : 1e6;
 
   const sceneBuilder = sceneBuilders[options.scene](options.colors);
-  loadEstimate = sceneBuilder.computationLoadEstimate * nPixels / (640 * 480);
+  loadEstimate = sceneBuilder.getComputationLoadEstimate() * nPixels / (640 * 480);
+  dynamicCamera = new DynamicCamera(element, sceneBuilder.getCameraParameters());
 
   const { source, data } = sceneBuilder
     .toggleDataTextures(options.dataTextures)
+    .setDynamicCamera(true)
     .buildScene();
 
   const nRands = parseInt(options.lightBounces, 10) * 2 + 5;
@@ -78,7 +83,7 @@ function render(options) {
         file: `renderer/${options.renderer}.glsl`
       },
       scene: { source },
-      camera: { file: `camera/${options.camera}.glsl` },
+      camera: { file: `camera/${options.cameraLens}.glsl` },
       rand: {
         file: options.dataTextures
           ? 'rand/textures.glsl'
@@ -104,6 +109,7 @@ function render(options) {
           .split('\n').map(x => x.trim()).join('\n')
       }
     }),
+    flip_y: true,
     monte_carlo: true,
     uniforms: {
       resolution: 'resolution',
@@ -114,6 +120,16 @@ function render(options) {
     }
   };
 
+  if (dynamicCamera) {
+    Object.entries(dynamicCamera.getValues()).forEach(([key, value]) => {
+      spec.uniforms[key] = {
+        dynamic() { return dynamicCamera.getValues()[key]; },
+        default: value
+      };
+    });
+    spec.dynamic_reset = () => dynamicCamera.wasChanged();
+  }
+
   if (bench) bench.destroy();
 
   document.getElementById('shader-source').innerText = spec.source;
@@ -123,7 +139,17 @@ function render(options) {
 
   document.getElementById('copy-to-clipboard-button').onclick = () => {
     const textarea = document.getElementById('copy-to-clipboard-area');
-    textarea.value = JSON.stringify(spec);
+
+    const specWithoutDynamics = { ...spec };
+    if (dynamicCamera) {
+      delete specWithoutDynamics.dynamic_reset;
+      specWithoutDynamics.uniforms = {
+        ...specWithoutDynamics.uniforms,
+        ...dynamicCamera.getValues()
+      };
+    }
+
+    textarea.value = JSON.stringify(specWithoutDynamics);
     textarea.select();
     document.execCommand('copy');
   };
@@ -160,7 +186,7 @@ function start() {
   });
   gui.add('colors', 'rgb', ['grayscale', 'rgb']);
   gui.add('specular', 'ggx', ['simple', 'ggx']);
-  gui.add('camera', 'thin_lens', ['pinhole', 'thin_lens', 'orthographic']);
+  gui.add('cameraLens', 'thin_lens', ['pinhole', 'thin_lens', 'orthographic']);
   gui.add('dataTextures', true);
   gui.add('lightBounces', 4, [1, 2, 3, 4, 5]);
   gui.add('gamma', 'sRGB', ['1.0', '1.8', '2.2', 'sRGB']);

@@ -235,21 +235,23 @@ function buildDataTextureMaterials(uniqueMaterials, objectsById, shaderColorMode
 
 function SceneBuilder() {
   const objects = [];
-  let cameraSource;
+  let cameraParameters;
   let shaderColorModel = 'rgb';
   let enableMaterialTextures = true;
   let enableGeometryTextures = true;
   let airMaterial;
+  // estimate of the relative expensiveness of rendering the scene
+  let computationLoadEstimate = 1.0;
 
   const deg2rad = x => x / 180.0 * Math.PI;
   const toFloat = x => `float(${x})`;
 
-  // estimate of the relative expensiveness of rendering the scene
-  this.computationLoadEstimate = 1.0;
   this.setComputationLoadEstimate = (estimate) => {
-    this.computationLoadEstimate = estimate;
+    computationLoadEstimate = estimate;
     return this;
   };
+
+  this.getComputationLoadEstimate = () => computationLoadEstimate;
 
   this.addObject = (surface, positionOrMatrix, material) => {
     objects.push({
@@ -277,45 +279,58 @@ function SceneBuilder() {
   };
 
   this.setFixedPinholeCamera = (parameters) => {
-    function transformParameters() {
-      const defaults = {
-        fov: 50.0,
-        pitch: 0.0,
-        yaw: 0.0,
-        target: [0, 0, 0],
-        distance: 1,
-        apertureSize: 0.01
-      };
-      const p = Object.assign(defaults, parameters);
+    const defaults = {
+      fov: 50.0,
+      pitch: 0.0,
+      yaw: 0.0,
+      target: [0, 0, 0],
+      distance: 1,
+      apertureSize: 0.01
+    };
+    const p = Object.assign(defaults, parameters);
 
-      if (p.position) {
-        // position-target format
-        const delta = [0, 1, 2].map(i => p.target[i] - p.position[i]);
-        p.distance = Math.sqrt(delta.map(x => x * x).reduce((a, b) => a + b));
-        p.phiRad = -Math.atan2(delta[2], Math.sqrt(delta[0] * delta[0] + delta[1] * delta[1]));
-        p.thetaRad = Math.atan2(delta[1], delta[0]);
-      } else {
-        // target + angles & distance format
-        p.phiRad = deg2rad(-p.pitch);
-        p.thetaRad = deg2rad(p.yaw);
-      }
-
-      return {
-        fovAngleRad: toFloat(deg2rad(p.fov)),
-        phiRad: toFloat(p.phiRad),
-        thetaRad: toFloat(p.thetaRad),
-        // TODO: roll not supported
-        distance: toFloat(p.distance),
-        targetList: p.target.join(','),
-        apertureSize: toFloat(p.apertureSize),
-        focusDistance: toFloat(p.focusDistance || p.distance)
-      };
+    if (p.position) {
+      // position-target format
+      const delta = [0, 1, 2].map(i => p.target[i] - p.position[i]);
+      p.distance = Math.sqrt(delta.map(x => x * x).reduce((a, b) => a + b));
+      p.phiRad = -Math.atan2(delta[2], Math.sqrt(delta[0] * delta[0] + delta[1] * delta[1]));
+      p.thetaRad = Math.atan2(delta[1], delta[0]);
+    } else {
+      // target + angles & distance format
+      p.phiRad = deg2rad(-p.pitch);
+      p.thetaRad = deg2rad(p.yaw);
     }
 
-    cameraSource = Mustache.render(
-      tracerData.templates['fixed_camera.glsl.mustache'],
-      transformParameters(),
-    );
+    cameraParameters = {
+      fixed: true,
+      fovAngleRad: deg2rad(p.fov),
+      phiRad: p.phiRad,
+      thetaRad: p.thetaRad,
+      // TODO: roll not supported
+      distance: p.distance,
+      target: p.target,
+      apertureSize: p.apertureSize,
+      focusDistance: p.focusDistance || p.distance
+    };
+
+    cameraParameters.transform = () => ({
+      fixed: true,
+      fovAngleRad: toFloat(cameraParameters.fovAngleRad),
+      phiRad: toFloat(cameraParameters.phiRad),
+      thetaRad: toFloat(cameraParameters.thetaRad),
+      distance: toFloat(cameraParameters.distance),
+      targetList: cameraParameters.target.join(','),
+      apertureSize: toFloat(cameraParameters.apertureSize),
+      focusDistance: toFloat(cameraParameters.focusDistance)
+    });
+
+    return this;
+  };
+
+  this.getCameraParameters = () => cameraParameters;
+
+  this.setDynamicCamera = (isDynamic = true) => {
+    cameraParameters.fixed = !isDynamic;
     return this;
   };
 
@@ -473,7 +488,12 @@ function SceneBuilder() {
         lights,
         uniqueSamplers
       }),
-      cameraSource
+      Mustache.render(
+        tracerData.templates[cameraParameters.fixed
+          ? 'fixed_camera.glsl.mustache'
+          : 'uniform_camera.glsl.mustache'],
+        cameraParameters.transform()
+      )
     ].join('\n');
 
     return {

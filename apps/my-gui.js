@@ -1,4 +1,4 @@
-/* global document  */
+/* global document */
 
 // dat.gui-like GUI
 function GUI(el) {
@@ -6,7 +6,9 @@ function GUI(el) {
   let anyChangeCallback;
 
   const anyChange = () => {
-    if (anyChangeCallback) anyChangeCallback(options);
+    if (anyChangeCallback) {
+      anyChangeCallback(options);
+    }
   };
 
   function addRow() {

@@ -1,0 +1,21 @@
+#ifndef ORBIT_CAMERA_INCLUDED
+#define ORBIT_CAMERA_INCLUDED
+
+uniform vec3 u_cam_pos;
+uniform vec3 u_cam_x;
+uniform vec3 u_cam_y;
+uniform vec3 u_cam_z;
+
+void get_pinhole_camera(out vec3 cam_pos, out vec3 cam_x, out vec3 cam_y, out vec3 cam_z, out float fov_angle) {
+  // define camera
+  cam_pos = u_cam_pos;
+  cam_x = u_cam_x;
+  cam_y = u_cam_y;
+  cam_z = u_cam_z;
+  fov_angle = {{fovAngleRad}};
+}
+
+float get_aperture_size() { return {{apertureSize}}; }
+float get_focus_distance() { return {{focusDistance}}; }
+
+#endif
