@@ -1,0 +1,42 @@
+#ifndef MOTION_BLUR_CAMERA_INCLUDED
+#define MOTION_BLUR_CAMERA_INCLUDED
+
+#include "rand"
+
+#ifndef quaternion_vector_mult
+#define quaternion_vector_mult(q, v) ((v) + 2.0 * cross((q).xyz, cross((q).xyz, (v)) + (q).w * (v)))
+#endif
+
+uniform vec3 u_cam_pos0, u_cam_pos1;
+
+// note: assuming normalized and dot(q0, q1) > 0!
+uniform vec4 u_cam_orientation0, u_cam_orientation1;
+uniform float u_cam_orientation_slerp_theta, u_cam_orientation_slerp_inv_sin;
+
+void get_pinhole_camera(out vec3 cam_pos, out vec3 cam_x, out vec3 cam_y, out vec3 cam_z, out float fov_angle, inout rand_state rng) {
+
+  const float EPS = 1e-5;
+  float t = rand_next_uniform(rng);
+  float t_comp = 1.0 - t;
+  cam_pos = t_comp * u_cam_pos0 + t * u_cam_pos1;
+
+  vec4 cam_orientation;
+  if (u_cam_orientation_slerp_theta < EPS) {
+    if (t < 0.5) cam_orientation = u_cam_orientation0;
+    else cam_orientation = u_cam_orientation1;
+  } else {
+    cam_orientation = u_cam_orientation_slerp_inv_sin * (
+        u_cam_orientation0*(t_comp*u_cam_orientation_slerp_theta) +
+        u_cam_orientation1*(t*u_cam_orientation_slerp_theta));
+  }
+
+  cam_x = quaternion_vector_mult(cam_orientation, vec3(1, 0, 0));
+  cam_y = quaternion_vector_mult(cam_orientation, vec3(0, 1, 0));
+  cam_z = quaternion_vector_mult(cam_orientation, vec3(0, 0, 1));
+  fov_angle = {{fovAngleRad}};
+}
+
+float get_aperture_size() { return {{apertureSize}}; }
+float get_focus_distance() { return {{focusDistance}}; }
+
+#endif
