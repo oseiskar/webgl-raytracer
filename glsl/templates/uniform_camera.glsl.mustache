@@ -6,7 +6,7 @@ uniform vec3 u_cam_x;
 uniform vec3 u_cam_y;
 uniform vec3 u_cam_z;
 
-void get_pinhole_camera(out vec3 cam_pos, out vec3 cam_x, out vec3 cam_y, out vec3 cam_z, out float fov_angle) {
+void get_pinhole_camera(out vec3 cam_pos, out vec3 cam_x, out vec3 cam_y, out vec3 cam_z, out float fov_angle, inout rand_state rng) {
   // define camera
   cam_pos = u_cam_pos;
   cam_x = u_cam_x;

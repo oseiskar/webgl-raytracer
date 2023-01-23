@@ -186,7 +186,7 @@ function start() {
   });
   gui.add('colors', 'rgb', ['grayscale', 'rgb']);
   gui.add('specular', 'ggx', ['simple', 'ggx']);
-  gui.add('cameraLens', 'thin_lens', ['pinhole', 'thin_lens', 'orthographic']);
+  gui.add('cameraLens', 'thin_lens', ['pinhole', 'thin_lens', 'orthographic', 'fisheye']);
   gui.add('dataTextures', true);
   gui.add('lightBounces', 4, [1, 2, 3, 4, 5]);
   gui.add('gamma', 'sRGB', ['1.0', '1.8', '2.2', 'sRGB']);

@@ -1,7 +1,7 @@
 #ifndef PINHOLE_CAMERA_INCLUDED
 #define PINHOLE_CAMERA_INCLUDED
 
-void get_pinhole_camera(out vec3 cam_pos, out vec3 cam_x, out vec3 cam_y, out vec3 cam_z, out float fov_angle) {
+void get_pinhole_camera(out vec3 cam_pos, out vec3 cam_x, out vec3 cam_y, out vec3 cam_z, out float fov_angle, inout rand_state rng) {
   // define camera
   fov_angle = {{fovAngleRad}};
   const float cam_theta = {{thetaRad}};
