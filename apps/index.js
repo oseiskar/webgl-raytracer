@@ -63,11 +63,13 @@ function render(options) {
 
   const sceneBuilder = sceneBuilders[options.scene](options.colors);
   loadEstimate = sceneBuilder.getComputationLoadEstimate() * nPixels / (640 * 480);
-  dynamicCamera = new DynamicCamera(element, sceneBuilder.getCameraParameters());
+  dynamicCamera = options.motionBlur ? null : new DynamicCamera(element, sceneBuilder.getCameraParameters());
+
+  if (options.motionBlur) sceneBuilder.setMotionBlurCamera();
+  else if (dynamicCamera) sceneBuilder.setDynamicCamera();
 
   const { source, data } = sceneBuilder
     .toggleDataTextures(options.dataTextures)
-    .setDynamicCamera(true)
     .buildScene();
 
   const nRands = parseInt(options.lightBounces, 10) * 2 + 5;
@@ -187,6 +189,7 @@ function start() {
   gui.add('colors', 'rgb', ['grayscale', 'rgb']);
   gui.add('specular', 'ggx', ['simple', 'ggx']);
   gui.add('cameraLens', 'thin_lens', ['pinhole', 'thin_lens', 'orthographic', 'fisheye']);
+  gui.add('motionBlur', false);
   gui.add('dataTextures', true);
   gui.add('lightBounces', 4, [1, 2, 3, 4, 5]);
   gui.add('gamma', 'sRGB', ['1.0', '1.8', '2.2', 'sRGB']);

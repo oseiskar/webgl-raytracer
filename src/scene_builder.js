@@ -26,6 +26,48 @@ function toVec3(x) {
   return `vec3(${x.join(',')})`;
 }
 
+function dot(a, b) {
+  let s = 0;
+  for (let i = 0; i < a.length; ++i) s += a[i]*b[i];
+  return s;
+}
+
+function rmat2quat(mat) {
+  // from https://eigen.tuxfamily.org/dox/Quaternion_8h_source.html
+  let t = mat[0][0] + mat[1][1] + mat[2][2]; // = matrix trace
+  let qx, qy, qz;
+  if (t > 0.0) {
+    t = Math.sqrt(t + 1.0);
+    qw = 0.5*t;
+    t = 0.5/t;
+    qx = (mat[2][1] - mat[1][2]) * t;
+    qy = (mat[0][2] - mat[2][0]) * t;
+    qz = (mat[1][0] - mat[0][1]) * t;
+    
+  } else {
+      let i = 0;
+      if (mat[1][1] > mat[0][0])
+          i = 1;
+      if (mat[2][2] > mat[i][i])
+          i = 2;
+      let j = (i+1)%3;
+      let k = (j+1)%3;
+
+      t = Math.sqrt(mat[i][i]-mat[j][j]-mat[k][k] + 1.0);
+      let qxyz = [0, 0, 0];
+      qxyz[i] = 0.5 * t;
+      t = 0.5/t;
+      qw = (mat[k][j]-mat[j][k])*t;
+      qxyz[j] = (mat[j][i]+mat[i][j])*t;
+      qxyz[k] = (mat[k][i]+mat[i][k])*t;
+      [qx,qy,qz] = qxyz;
+  }
+  const l = Math.sqrt(qw*qw + qx*qx + qy*qy + qz*qz);
+
+  return [qx/l, qy/l, qz/l, qw/l]; // GLSL ordering
+}
+
+
 function buildTextureProperties(uniqueMaterials) {
   const uniqueTextures = {};
   const textures = [];
@@ -242,6 +284,7 @@ function SceneBuilder() {
   let airMaterial;
   // estimate of the relative expensiveness of rendering the scene
   let computationLoadEstimate = 1.0;
+  let cameraUniforms = {};
 
   const deg2rad = x => x / 180.0 * Math.PI;
   const toFloat = x => `float(${x})`;
@@ -302,7 +345,7 @@ function SceneBuilder() {
     }
 
     cameraParameters = {
-      fixed: true,
+      type: 'fixed_camera',
       fovAngleRad: deg2rad(p.fov),
       phiRad: p.phiRad,
       thetaRad: p.thetaRad,
@@ -329,8 +372,75 @@ function SceneBuilder() {
 
   this.getCameraParameters = () => cameraParameters;
 
-  this.setDynamicCamera = (isDynamic = true) => {
-    cameraParameters.fixed = !isDynamic;
+  this.setDynamicCamera = () => {
+    cameraParameters.type = 'uniform_camera';
+    return this;
+  };
+
+  this.setMotionBlurCamera = () => {
+    cameraParameters.type = 'motion_blur_camera';
+
+    function transpose(m) {
+      const r = [];
+      for (let i = 0; i < m[0].length; ++i) {
+        r.push([]);
+        for (let j = 0; j < m.length; ++j) {
+          r[r.length - 1].push(m[j][i]);
+        }
+      }
+      return r;
+    }
+
+    function getCamToWorldRot(theta, phi) {
+      const a1 = Math.PI/2 - theta;
+      const a2 = phi;
+      const rotAzimuth = [[Math.cos(a1), Math.sin(a1)], [-Math.sin(a1), Math.cos(a1)]];
+      function applyRotAzimuth(v) {
+        const r = rotAzimuth;
+        return [r[0][0] * v[0] + r[0][1] * v[1], r[1][0] * v[0] + r[1][1] * v[1], v[2]];
+      };
+  
+      const dirFwd = [0, Math.cos(a2), -Math.sin(a2)];
+      const dirRight = [1, 0, 0];
+      const dirDown = [0, -Math.sin(a2), -Math.cos(a2)];
+      const camZ = applyRotAzimuth(dirFwd);
+      const camX = applyRotAzimuth(dirRight);
+      const camY = applyRotAzimuth(dirDown);
+
+      return transpose([camX, camY, camZ]);
+    }
+
+    function getPos(theta, phi) {
+      const d = cameraParameters.distance;
+      const trg = cameraParameters.target;
+      const rot = getCamToWorldRot(theta, phi);
+      const camZ = [rot[0][2], rot[1][2], rot[2][2]];
+      return [-camZ[0] * d + trg[0], -camZ[1] * d + trg[1], -camZ[2] * d + trg[2]];
+    }
+
+    const theta1 = cameraParameters.thetaRad;
+    const DUMMY_DELTA_DEG = 2;
+    const theta2 = DUMMY_DELTA_DEG / 180.0 * Math.PI + theta1;
+    const phi = cameraParameters.phiRad;
+
+    const q0 = rmat2quat(getCamToWorldRot(theta1, phi));
+    let q1 = rmat2quat(getCamToWorldRot(theta2, phi));
+
+    if (dot(q0, q1) < 0) q1 = q1.map(c => -c);
+    const slerp_theta = Math.acos(Math.max(0, Math.min(1, dot(q0, q1))));
+    let slerp_inv_sin = 1;
+    if (slerp_theta > 1e-8) slerp_inv_sin = 1.0 / Math.sin(slerp_theta);
+
+    cameraParameters.type = 'motion_blur_camera';
+    cameraUniforms = {
+      u_cam_pos0: getPos(theta1, phi),
+      u_cam_pos1: getPos(theta2, phi),
+      u_cam_orientation0: q0,
+      u_cam_orientation1: q1,
+      u_cam_orientation_slerp_theta: slerp_theta,
+      u_cam_orientation_slerp_inv_sin: slerp_inv_sin
+    };
+
     return this;
   };
 
@@ -489,9 +599,7 @@ function SceneBuilder() {
         uniqueSamplers
       }),
       Mustache.render(
-        tracerData.templates[cameraParameters.fixed
-          ? 'fixed_camera.glsl.mustache'
-          : 'uniform_camera.glsl.mustache'],
+        tracerData.templates[cameraParameters.type + '.glsl.mustache'],
         cameraParameters.transform()
       )
     ].join('\n');
@@ -500,7 +608,8 @@ function SceneBuilder() {
       source,
       data: {
         ...materialData,
-        ...geometryTextureData
+        ...geometryTextureData,
+        ...cameraUniforms
       }
     };
   };
